@@ -4,7 +4,9 @@
 //          DIRECT_URL   = URL directe (sans -pooler), utilisée pour les migrations
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" pour le local, "rhel-openssl-3.0.x" pour le runtime serverless Vercel/AWS
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
