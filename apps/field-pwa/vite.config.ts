@@ -32,5 +32,4 @@ export default defineConfig({
       },
     }),
   ],
-  resolve: { alias: { '@gmao/shared': new URL('../../packages/shared/src/index.ts', import.meta.url).pathname } },
 });

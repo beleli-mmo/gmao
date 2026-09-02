@@ -192,10 +192,10 @@ model Equipment {
   serialNumber   String?
   year           Int?
   meterKind      MeterKind       @default(NONE)
-  currentMeter   Decimal         @default(0) @db.Decimal(12, 2)
+  currentMeter   Float @default(0) 
   status         EquipmentStatus @default(EN_SERVICE)
   acquisitionDate  DateTime?
-  acquisitionCost  Decimal?      @db.Decimal(14, 2)
+  acquisitionCost  Float? 
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -228,7 +228,7 @@ model EquipmentAssignment {
 model MeterReading {
   id           String    @id @default(uuid())
   equipmentId  String
-  value        Decimal   @db.Decimal(12, 2)
+  value        Float 
   kind         MeterKind
   readAt       DateTime  @default(now())
   source       String    @default("FIELD")   // FIELD | TELEMATICS | ADMIN
@@ -248,10 +248,10 @@ model PreventivePlan {
   equipmentId   String
   label         String                          // ex: "VGP annuelle", "Révision 500h"
   trigger       PreventiveTrigger
-  intervalValue Decimal           @db.Decimal(12, 2)  // 500 (h) / 10000 (km) / 365 (jours)
-  lastDoneMeter Decimal?          @db.Decimal(12, 2)
+  intervalValue Float   // 500 (h) / 10000 (km) / 365 (jours)
+  lastDoneMeter Float? 
   lastDoneDate  DateTime?
-  nextDueMeter  Decimal?          @db.Decimal(12, 2)
+  nextDueMeter  Float? 
   nextDueDate   DateTime?
   isRegulatory  Boolean           @default(false)     // true pour les VGP
   active        Boolean           @default(true)
@@ -284,7 +284,7 @@ model Ticket {
   reporterId    String
   qualifierId   String?
 
-  meterAtReport Decimal?      @db.Decimal(12, 2)
+  meterAtReport Float? 
   dueDate       DateTime?                          // échéance planifiée (préventif) — base du TRPP
 
   createdAtField DateTime                          // horodatage terrain (peut être passé)
@@ -382,10 +382,10 @@ model Intervention {
   scheduledFor  DateTime?
   startedAt     DateTime?
   endedAt       DateTime?
-  laborHours    Decimal?     @db.Decimal(8, 2)
-  laborRate     Decimal?     @db.Decimal(10, 2)   // taux horaire appliqué (snapshot)
+  laborHours    Float? 
+  laborRate     Float?    // taux horaire appliqué (snapshot)
   report        String?
-  travelKm      Decimal?     @db.Decimal(8, 2)
+  travelKm      Float? 
 
   ticket        Ticket    @relation(fields: [ticketId], references: [id])
   mechanic      User?     @relation("mechanic", fields: [mechanicId], references: [id])
@@ -404,9 +404,9 @@ model Part {
   label           String
   category        String?
   unit            String   @default("U")        // U, L, kg, m...
-  unitCost        Decimal  @db.Decimal(12, 2)    // coût unitaire moyen pondéré
-  reorderPoint    Decimal  @db.Decimal(12, 2) @default(0)
-  reorderQty      Decimal  @db.Decimal(12, 2) @default(0)
+  unitCost        Float     // coût unitaire moyen pondéré
+  reorderPoint    Float  @default(0)
+  reorderQty      Float  @default(0)
   isConsumable    Boolean  @default(false)
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())
@@ -422,8 +422,8 @@ model StockItem {
   id           String   @id @default(uuid())
   partId       String   @unique
   location     String   @default("MAGASIN_CENTRAL")
-  onHand       Decimal  @db.Decimal(12, 2) @default(0)
-  reserved     Decimal  @db.Decimal(12, 2) @default(0)
+  onHand       Float  @default(0)
+  reserved     Float  @default(0)
   updatedAt    DateTime @updatedAt
 
   part         Part @relation(fields: [partId], references: [id])
@@ -433,8 +433,8 @@ model StockMovement {
   id           String            @id @default(uuid())
   partId       String
   kind         StockMovementKind
-  quantity     Decimal           @db.Decimal(12, 2)
-  unitCost     Decimal           @db.Decimal(12, 2)
+  quantity     Float 
+  unitCost     Float 
   ticketId     String?
   reference    String?                              // n° BL, commande...
   createdAt    DateTime          @default(now())
@@ -450,9 +450,9 @@ model TicketPart {
   ticketId       String
   interventionId String?
   partId         String
-  qtyRequested   Decimal  @db.Decimal(12, 2)
-  qtyConsumed    Decimal  @db.Decimal(12, 2) @default(0)
-  unitCost       Decimal  @db.Decimal(12, 2)         // snapshot au moment de la consommation
+  qtyRequested   Float 
+  qtyConsumed    Float  @default(0)
+  unitCost       Float          // snapshot au moment de la consommation
 
   ticket         Ticket        @relation(fields: [ticketId], references: [id])
   intervention   Intervention? @relation(fields: [interventionId], references: [id])
@@ -467,8 +467,8 @@ model ExternalInvoice {
   ticketId     String
   providerId   String?
   invoiceRef   String
-  amountHT     Decimal  @db.Decimal(14, 2)
-  vatAmount    Decimal  @db.Decimal(14, 2) @default(0)
+  amountHT     Float 
+  vatAmount    Float  @default(0)
   currency     String   @default("XOF")
   invoiceDate  DateTime
   fileKey      String?
@@ -491,9 +491,9 @@ model CostLine {
   lotId        String?                        // imputation analytique — lot technique
   kind         CostKind
   label        String
-  quantity     Decimal  @db.Decimal(12, 2) @default(1)
-  unitAmount   Decimal  @db.Decimal(14, 2)
-  amount       Decimal  @db.Decimal(14, 2)    // = quantity * unitAmount (figé)
+  quantity     Float  @default(1)
+  unitAmount   Float 
+  amount       Float     // = quantity * unitAmount (figé)
   currency     String   @default("XOF")
   incurredAt   DateTime @default(now())
   locked       Boolean  @default(false)       // true après clôture du ticket

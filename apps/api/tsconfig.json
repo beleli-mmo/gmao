@@ -9,9 +9,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": { "@gmao/shared": ["../../packages/shared/src/index.ts"] }
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

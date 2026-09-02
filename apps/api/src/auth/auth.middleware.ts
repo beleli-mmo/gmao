@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import type { Role } from '@gmao/shared';
+import type { Role } from '../shared';
 
 export interface AuthUser {
   id: string;

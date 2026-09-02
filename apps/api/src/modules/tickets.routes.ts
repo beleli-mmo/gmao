@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../prisma';
 import { requireAuth, requireRole } from '../auth/auth.middleware';
 import { applyTransition } from '../sync/ticket-state-machine';
-import { QualifyTicketBody, PlanTicketBody, CloseTicketBody } from '@gmao/shared';
+import { QualifyTicketBody, PlanTicketBody, CloseTicketBody } from '../shared';
 import { broadcast } from '../realtime';
 import { nextTicketReference } from '../lib/reference';
 import { recomputeTicketCosts } from '../lib/cost-imputation';

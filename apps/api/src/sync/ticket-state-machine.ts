@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient, TicketStatus } from '@prisma/client';
-import { assertTransition } from '@gmao/shared';
-import type { Role } from '@gmao/shared';
+import { assertTransition } from '../shared';
+import type { Role } from '../shared';
 import { recomputeTicketCosts } from '../lib/cost-imputation';
 
 const NOW_FIELD: Partial<Record<TicketStatus, string>> = {

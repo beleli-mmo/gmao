@@ -15,7 +15,7 @@
 import nano from 'nano';
 import { z } from 'zod';
 import { prisma } from '../prisma';
-import { FieldTicketDoc } from '@gmao/shared';
+import { FieldTicketDoc } from '../shared';
 import { applyTransition } from './ticket-state-machine';
 import { putObject } from '../lib/object-store';
 import { broadcast } from '../realtime';

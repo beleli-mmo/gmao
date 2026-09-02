@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@gmao/shared": "*",
     "jsqr": "^1.4.0",
     "pouchdb-browser": "^9.0.0",
     "react": "^18.3.1",

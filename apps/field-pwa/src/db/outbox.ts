@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { localTickets } from './pouch';
-import type { FieldTicketDoc } from '@gmao/shared';
+import type { FieldTicketDoc } from '../shared';
 
 /**
  * Écriture d'un ticket terrain dans PouchDB.
