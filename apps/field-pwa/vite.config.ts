@@ -32,4 +32,13 @@ export default defineConfig({
       },
     }),
   ],
+  // pouchdb-browser attend le module Node `events` : on le remplace par le polyfill npm
+  // et on force `global` = `globalThis` (autres accès Node résiduels).
+  define: { global: 'globalThis' },
+  resolve: {
+    alias: {
+      events: 'events',
+    },
+  },
+  optimizeDeps: { include: ['pouchdb-browser', 'events'] },
 });
