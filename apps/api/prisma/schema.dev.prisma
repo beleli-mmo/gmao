@@ -1,0 +1,433 @@
+// ─────────────────────────────────────────────────────────────────────
+// VARIANTE DÉVELOPPEMENT LOCAL — SQLite, zéro infrastructure.
+// Le schéma de référence (PostgreSQL, avec vrais enums & Decimal) reste `schema.prisma`.
+// Différences imposées par SQLite :
+//   provider sqlite · enum → String · Decimal → Float · String[] → String CSV · pas de @db.*
+//
+//   npm run db:local:setup   (generate + db push + seed)
+//   DATABASE_URL="file:./dev.db"
+// ─────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Valeurs possibles (contrôlées applicativement, cf. packages/shared/src/enums.ts) :
+//   Role            FIELD_MANAGER | PARK_MANAGER | MECHANIC | ADMIN
+//   EquipmentKind   ENGIN | VEHICULE | OUTILLAGE
+//   EquipmentStatus EN_SERVICE | EN_PANNE | EN_MAINTENANCE | EN_TRANSIT | REFORME
+//   MeterKind       HEURES | KM | NONE
+//   TicketType      PANNE_CRITIQUE | MAINTENANCE_PREVENTIVE | DEMANDE_PIECE
+//   Urgency         N1_BLOQUANT | N2_MAJEUR | N3_MINEUR
+//   TicketStatus    CREE | EN_ATTENTE | QUALIFIE | PLANIFIE | EN_COURS | TRAVAUX_TERMINES | VALIDE_TERRAIN | CLOTURE | ANNULE
+//   AttachmentKind  PHOTO | VIDEO | VOICE_NOTE | DOCUMENT
+//   AssigneeKind    MECHANIC | PROVIDER
+//   CostKind        MAIN_OEUVRE | PIECE | FACTURE_EXTERNE | DEPLACEMENT
+//   StockMovementKind ENTREE | SORTIE | AJUSTEMENT | RETOUR
+//   PreventiveTrigger HEURES | KM | CALENDAIRE
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         String
+  phone        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reportedTickets  Ticket[]          @relation("reporter")
+  qualifiedTickets Ticket[]          @relation("qualifier")
+  interventions    Intervention[]    @relation("mechanic")
+  ticketEvents     TicketEvent[]
+  signatures       TicketSignature[]
+  meterReadings    MeterReading[]
+
+  @@index([role])
+}
+
+model Site {
+  id        String    @id @default(uuid())
+  code      String    @unique
+  name      String
+  address   String?
+  startDate DateTime?
+  endDate   DateTime?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  assignments EquipmentAssignment[]
+  tickets     Ticket[]
+  costLines   CostLine[]
+
+  @@index([active])
+}
+
+model Provider {
+  id          String   @id @default(uuid())
+  name        String
+  siret       String?
+  contactName String?
+  email       String?
+  phone       String?
+  specialties String   @default("") // CSV (Postgres : String[])
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  interventions    Intervention[]    @relation("provider")
+  externalInvoices ExternalInvoice[]
+}
+
+// Lot technique / architectural (Ascenseurs, SSI, Plomberie, Électricité HT/BT,
+// Groupe électrogène, Lots Architectes, Nettoyage…). Axe d'imputation des coûts.
+model TechnicalLot {
+  id               String  @id @default(uuid())
+  code             String  @unique // ASC, SSI, PLB, ELC, GE, ARC, NET
+  name             String
+  defaultFrequency String? // Quotidien | Hebdomadaire | Mensuel | Trimestriel | Semestriel | Annuel | Quinquennal
+  isRegulatory     Boolean @default(false)
+  color            String  @default("#64748b")
+  active           Boolean @default(true)
+
+  equipment Equipment[]
+  tickets   Ticket[]
+  costLines CostLine[]
+}
+
+model Equipment {
+  id              String    @id @default(uuid())
+  assetTag        String    @unique // [PROJET]-[LOT]-[ZONE]-[TYPE]-[N°]
+  qrPayload       String    @unique
+  name            String
+  kind            String // ORGANE | INSTALLATION | EQUIPEMENT | OUVRAGE …
+  lotId           String?
+  zone            String? // Zone / niveau (ex: "RDC", "N2", "Toiture", "Sous-sol")
+  criticality     String    @default("STANDARD") // CRITIQUE | IMPORTANT | STANDARD
+  brand           String?
+  model           String?
+  serialNumber    String?
+  year            Int?
+  meterKind       String    @default("NONE")
+  currentMeter    Float     @default(0)
+  status          String    @default("EN_SERVICE")
+  acquisitionDate DateTime?
+  acquisitionCost Float?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  lot             TechnicalLot?         @relation(fields: [lotId], references: [id])
+  assignments     EquipmentAssignment[]
+  meterReadings   MeterReading[]
+  tickets         Ticket[]
+  preventivePlans PreventivePlan[]
+  costLines       CostLine[]
+
+  @@index([status])
+  @@index([kind])
+  @@index([lotId])
+}
+
+model EquipmentAssignment {
+  id          String    @id @default(uuid())
+  equipmentId String
+  siteId      String
+  fromDate    DateTime  @default(now())
+  toDate      DateTime?
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  site        Site      @relation(fields: [siteId], references: [id])
+
+  @@index([equipmentId, toDate])
+  @@index([siteId])
+}
+
+model MeterReading {
+  id           String   @id @default(uuid())
+  equipmentId  String
+  value        Float
+  kind         String
+  readAt       DateTime @default(now())
+  source       String   @default("FIELD")
+  recordedById String?
+  ticketId     String?  @unique
+
+  equipment  Equipment @relation(fields: [equipmentId], references: [id])
+  recordedBy User?      @relation(fields: [recordedById], references: [id])
+  ticket     Ticket?    @relation(fields: [ticketId], references: [id])
+
+  @@index([equipmentId, readAt])
+}
+
+model PreventivePlan {
+  id            String    @id @default(uuid())
+  equipmentId   String
+  label         String
+  trigger       String
+  intervalValue Float
+  lastDoneMeter Float?
+  lastDoneDate  DateTime?
+  nextDueMeter  Float?
+  nextDueDate   DateTime?
+  isRegulatory  Boolean   @default(false)
+  active        Boolean   @default(true)
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+  tickets   Ticket[]
+
+  @@index([equipmentId, active])
+  @@index([nextDueDate])
+}
+
+model Ticket {
+  id               String    @id @default(uuid())
+  reference        String    @unique
+  clientId         String    @unique
+  type             String
+  urgency          String
+  status           String    @default("CREE")
+  title            String
+  description      String?
+  siteId           String
+  equipmentId      String?
+  lotId            String?
+  preventivePlanId String?
+  reporterId       String
+  qualifierId      String?
+  meterAtReport    Float?
+  dueDate          DateTime? // échéance planifiée (préventif) — base du calcul TRPP
+  createdAtField   DateTime
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  qualifiedAt      DateTime?
+  plannedAt        DateTime?
+  startedAt        DateTime?
+  workDoneAt       DateTime?
+  validatedAt      DateTime?
+  closedAt         DateTime?
+
+  site           Site            @relation(fields: [siteId], references: [id])
+  equipment      Equipment?      @relation(fields: [equipmentId], references: [id])
+  lot            TechnicalLot?   @relation(fields: [lotId], references: [id])
+  preventivePlan PreventivePlan? @relation(fields: [preventivePlanId], references: [id])
+  reporter       User            @relation("reporter", fields: [reporterId], references: [id])
+  qualifier      User?           @relation("qualifier", fields: [qualifierId], references: [id])
+
+  attachments      TicketAttachment[]
+  events           TicketEvent[]
+  interventions    Intervention[]
+  requestedParts   TicketPart[]
+  costLines        CostLine[]
+  signature        TicketSignature?
+  meterReading     MeterReading?
+  externalInvoices ExternalInvoice[]
+
+  @@index([status])
+  @@index([siteId, status])
+  @@index([equipmentId])
+  @@index([lotId])
+  @@index([urgency, status])
+  @@index([type, dueDate])
+}
+
+model TicketEvent {
+  id         String   @id @default(uuid())
+  ticketId   String
+  fromStatus String?
+  toStatus   String
+  actorId    String?
+  note       String?
+  createdAt  DateTime @default(now())
+  origin     String   @default("API")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  actor  User?  @relation(fields: [actorId], references: [id])
+
+  @@index([ticketId, createdAt])
+}
+
+model TicketAttachment {
+  id          String    @id @default(uuid())
+  ticketId    String
+  kind        String
+  storageKey  String
+  couchAttId  String?
+  mimeType    String
+  sizeBytes   Int
+  width       Int?
+  height      Int?
+  durationSec Int?
+  capturedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+}
+
+model TicketSignature {
+  id           String   @id @default(uuid())
+  ticketId     String   @unique
+  signerId     String
+  signerName   String
+  signatureKey String
+  signedAt     DateTime @default(now())
+  deviceInfo   String?
+  geoLat       Float?
+  geoLng       Float?
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  signer User   @relation(fields: [signerId], references: [id])
+}
+
+model Intervention {
+  id           String    @id @default(uuid())
+  ticketId     String
+  assigneeKind String
+  mechanicId   String?
+  providerId   String?
+  scheduledFor DateTime?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  laborHours   Float?
+  laborRate    Float?
+  report       String?
+  travelKm     Float?
+
+  ticket    Ticket       @relation(fields: [ticketId], references: [id])
+  mechanic  User?        @relation("mechanic", fields: [mechanicId], references: [id])
+  provider  Provider?    @relation("provider", fields: [providerId], references: [id])
+  partsUsed TicketPart[]
+
+  @@index([ticketId])
+  @@index([mechanicId, scheduledFor])
+}
+
+model Part {
+  id           String   @id @default(uuid())
+  sku          String   @unique
+  label        String
+  category     String?
+  unit         String   @default("U")
+  unitCost     Float
+  reorderPoint Float    @default(0)
+  reorderQty   Float    @default(0)
+  isConsumable Boolean  @default(false)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  stock       StockItem?
+  movements   StockMovement[]
+  ticketParts TicketPart[]
+
+  @@index([category])
+}
+
+model StockItem {
+  id        String   @id @default(uuid())
+  partId    String   @unique
+  location  String   @default("MAGASIN_CENTRAL")
+  onHand    Float    @default(0)
+  reserved  Float    @default(0)
+  updatedAt DateTime @updatedAt
+
+  part Part @relation(fields: [partId], references: [id])
+}
+
+model StockMovement {
+  id        String   @id @default(uuid())
+  partId    String
+  kind      String
+  quantity  Float
+  unitCost  Float
+  ticketId  String?
+  reference String?
+  createdAt DateTime @default(now())
+
+  part Part @relation(fields: [partId], references: [id])
+
+  @@index([partId, createdAt])
+}
+
+model TicketPart {
+  id             String  @id @default(uuid())
+  ticketId       String
+  interventionId String?
+  partId         String
+  qtyRequested   Float
+  qtyConsumed    Float   @default(0)
+  unitCost       Float
+
+  ticket       Ticket        @relation(fields: [ticketId], references: [id])
+  intervention Intervention? @relation(fields: [interventionId], references: [id])
+  part         Part          @relation(fields: [partId], references: [id])
+
+  @@index([ticketId])
+  @@index([partId])
+}
+
+model ExternalInvoice {
+  id          String   @id @default(uuid())
+  ticketId    String
+  providerId  String?
+  invoiceRef  String
+  amountHT    Float
+  vatAmount   Float    @default(0)
+  currency    String   @default("XOF")
+  invoiceDate DateTime
+  fileKey     String?
+  createdAt   DateTime @default(now())
+
+  ticket   Ticket    @relation(fields: [ticketId], references: [id])
+  provider Provider? @relation(fields: [providerId], references: [id])
+
+  @@index([ticketId])
+}
+
+model CostLine {
+  id          String   @id @default(uuid())
+  ticketId    String
+  siteId      String
+  equipmentId String?
+  lotId       String?
+  kind        String
+  label       String
+  quantity    Float    @default(1)
+  unitAmount  Float
+  amount      Float
+  currency    String   @default("XOF")
+  incurredAt  DateTime @default(now())
+  locked      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  ticket    Ticket        @relation(fields: [ticketId], references: [id])
+  site      Site          @relation(fields: [siteId], references: [id])
+  equipment Equipment?    @relation(fields: [equipmentId], references: [id])
+  lot       TechnicalLot? @relation(fields: [lotId], references: [id])
+
+  @@index([siteId, incurredAt])
+  @@index([lotId, incurredAt])
+  @@index([ticketId])
+  @@index([equipmentId, kind])
+}
+
+model SyncLog {
+  id          String   @id @default(uuid())
+  couchId     String
+  couchRev    String
+  docType     String
+  clientId    String?
+  status      String
+  reason      String?
+  seq         String?
+  processedAt DateTime @default(now())
+
+  @@unique([couchId, couchRev])
+  @@index([clientId])
+  @@index([status])
+}

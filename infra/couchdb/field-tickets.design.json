@@ -1,0 +1,14 @@
+{
+  "_id": "_design/guard",
+  "language": "javascript",
+  "comment": "Base 'field-tickets' : les PWA terrain répliquent ici. Validation minimale côté CouchDB ; la validation métier complète est faite par le worker d'ingestion.",
+  "validate_doc_update": "function (newDoc, oldDoc, userCtx) {\n  if (newDoc._deleted) {\n    // seul un admin peut supprimer un doc terrain\n    if (userCtx.roles.indexOf('_admin') === -1) throw({forbidden: 'suppression interdite'});\n    return;\n  }\n  if (newDoc._id.indexOf('ticket:') !== 0) throw({forbidden: 'prefixe _id invalide'});\n  if (newDoc.type !== 'ticket') throw({forbidden: 'type invalide'});\n  if (newDoc.schemaVersion !== 1) throw({forbidden: 'schemaVersion non supportee'});\n  var req = ['clientId','ticketType','urgency','title','siteId','reporterId','createdAtField'];\n  for (var i=0;i<req.length;i++) if (!newDoc[req[i]]) throw({forbidden: 'champ requis manquant: '+req[i]});\n  if (['PANNE_CRITIQUE','MAINTENANCE_PREVENTIVE','DEMANDE_PIECE'].indexOf(newDoc.ticketType) === -1) throw({forbidden: 'ticketType invalide'});\n  if (['N1_BLOQUANT','N2_MAJEUR','N3_MINEUR'].indexOf(newDoc.urgency) === -1) throw({forbidden: 'urgency invalide'});\n  // immuabilite : clientId et reporterId ne changent jamais\n  if (oldDoc) {\n    if (oldDoc.clientId !== newDoc.clientId) throw({forbidden: 'clientId immuable'});\n    if (oldDoc.reporterId !== newDoc.reporterId) throw({forbidden: 'reporterId immuable'});\n  }\n}",
+  "views": {
+    "by_reporter": {
+      "map": "function (doc) { if (doc.type === 'ticket') emit(doc.reporterId, doc.localStatus); }"
+    },
+    "by_site": {
+      "map": "function (doc) { if (doc.type === 'ticket') emit(doc.siteId, 1); }"
+    }
+  }
+}

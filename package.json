@@ -1,0 +1,15 @@
+{
+  "name": "gmao-btp",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev:infra": "docker compose up -d",
+    "dev:api": "npm -w apps/api run dev",
+    "dev:ingest": "npm -w apps/api run dev:ingest",
+    "dev:pwa": "npm -w apps/field-pwa run dev",
+    "dev:admin": "npm -w apps/admin-web run dev",
+    "db:migrate": "npm -w apps/api run prisma:migrate",
+    "db:seed": "npm -w apps/api run prisma:seed"
+  }
+}
