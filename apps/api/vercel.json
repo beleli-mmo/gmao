@@ -1,7 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "prisma generate",
   "framework": null,
+  "buildCommand": "prisma generate && mkdir -p public",
+  "outputDirectory": "public",
   "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
-  "functions": { "api/index.ts": { "maxDuration": 30, "memory": 512 } }
+  "functions": { "api/index.ts": { "maxDuration": 30 } }
 }
