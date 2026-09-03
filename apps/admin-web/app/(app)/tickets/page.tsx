@@ -74,7 +74,7 @@ export default function TicketsPage() {
                 <td><Link href={`/tickets/${t.id}`}>{t.reference}</Link></td>
                 <td className="muted">{TICKET_TYPE_LABEL[t.type] ?? t.type}</td>
                 <td>{t.title}</td>
-                <td>{t.site.code}</td>
+                <td title={t.site.code}>{t.site.name}</td>
                 <td>{t.lot ? <span className="badge" style={{ background: `${t.lot.color}22`, color: t.lot.color }}>{t.lot.code}</span> : '—'}</td>
                 <td>{t.equipment?.assetTag ?? '—'}</td>
                 <td><UrgencyBadge urgency={t.urgency} /></td>
