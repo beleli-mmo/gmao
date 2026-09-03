@@ -8,13 +8,17 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        // le shell applicatif est précaché ; les données passent par PouchDB, pas par le SW
+        // le shell applicatif est précaché ; les données passent par l'API, pas par le SW
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         navigateFallback: '/index.html',
+        // le nouveau SW prend la main immédiatement → pas de version bloquée en cache
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkOnly', // jamais de cache API : l'offline est géré par PouchDB
+            handler: 'NetworkOnly', // jamais de cache API
           },
         ],
       },
@@ -34,7 +38,10 @@ export default defineConfig({
   ],
   // pouchdb-browser attend le module Node `events` : on le remplace par le polyfill npm
   // et on force `global` = `globalThis` (autres accès Node résiduels).
-  define: { global: 'globalThis' },
+  define: {
+    global: 'globalThis',
+    __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')),
+  },
   resolve: {
     alias: {
       events: 'events',

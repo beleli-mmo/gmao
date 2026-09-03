@@ -48,6 +48,7 @@ function Login({ onDone }: { onDone: (s: Session) => void }) {
         {err && <p style={{ color: '#b3140f', margin: 0 }}>{err}</p>}
         <button className="app-cta app-cta--primary" disabled={loading}>{loading ? 'Connexion…' : 'Se connecter'}</button>
       </form>
+      <p className="muted" style={{ fontSize: 11, textAlign: 'center', marginTop: 8 }}>version {__BUILD__}</p>
     </main>
   );
 }
@@ -130,6 +131,7 @@ function App() {
       <button className="app-cta" onClick={() => setScreen({ name: 'ticket' })}>✏️ Créer une demande</button>
       <button className="app-cta" onClick={() => setScreen({ name: 'history' })}>📋 Mes demandes</button>
       <button className="app-cta" style={{ borderColor: 'transparent', color: '#1769ff' }} onClick={logout}>Se déconnecter</button>
+      <p className="muted" style={{ fontSize: 11, textAlign: 'center', marginTop: 4 }}>version {__BUILD__}</p>
     </main>
   );
 }
