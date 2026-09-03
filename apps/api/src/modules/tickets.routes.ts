@@ -148,7 +148,8 @@ ticketsRouter.get('/', async (req, res, next) => {
         lot: { select: { code: true, name: true, color: true } },
         _count: { select: { attachments: true, costLines: true } },
       },
-      orderBy: [{ urgency: 'asc' }, { createdAt: 'desc' }],
+      // la plus récente en premier (l'urgence est déjà une colonne filtrable/badge)
+      orderBy: [{ createdAtField: 'desc' }, { createdAt: 'desc' }],
       take: q.take + 1,
       ...(q.cursor ? { cursor: { id: q.cursor }, skip: 1 } : {}),
     });
