@@ -5,7 +5,26 @@ import { QrScanner } from './components/QrScanner';
 import { MyTicketsList } from './components/MyTicketsList';
 import { setSession as setSyncSession, pullReference, onAuthExpiredCallback } from './db/pouch';
 import type { ResolvedEquipment } from './lib/qr';
+import { resetApp } from './lib/reset';
 import './app.css';
+
+function ResetLink() {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      className="app-reset"
+      disabled={busy}
+      onClick={async () => {
+        if (!window.confirm('Réinitialiser l’application ?\n\nCela vide le cache et déconnecte ce téléphone, puis recharge la dernière version. Aucune demande déjà envoyée n’est perdue (elles restent au bureau).')) return;
+        setBusy(true);
+        await resetApp();
+      }}
+    >
+      {busy ? 'Réinitialisation…' : '↻ Réinitialiser l’application'}
+    </button>
+  );
+}
 
 const API = (import.meta.env.VITE_API_URL as string)?.replace(/\/$/, '') || '';
 type Session = { username: string; token: string; fullName: string };
@@ -49,6 +68,7 @@ function Login({ onDone }: { onDone: (s: Session) => void }) {
         <button className="app-cta app-cta--primary" disabled={loading}>{loading ? 'Connexion…' : 'Se connecter'}</button>
       </form>
       <p className="muted" style={{ fontSize: 11, textAlign: 'center', marginTop: 8 }}>version {__BUILD__}</p>
+      <ResetLink />
     </main>
   );
 }
@@ -132,6 +152,7 @@ function App() {
       <button className="app-cta" onClick={() => setScreen({ name: 'history' })}>📋 Mes demandes</button>
       <button className="app-cta" style={{ borderColor: 'transparent', color: '#1769ff' }} onClick={logout}>Se déconnecter</button>
       <p className="muted" style={{ fontSize: 11, textAlign: 'center', marginTop: 4 }}>version {__BUILD__}</p>
+      <ResetLink />
     </main>
   );
 }

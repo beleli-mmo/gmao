@@ -46,3 +46,20 @@ body {
   font-size: 15px;
   font-weight: 700;
 }
+
+.app-reset {
+  align-self: center;
+  margin-top: 4px;
+  padding: 10px 16px;
+  min-height: 40px;
+  border: 1px solid #c9a23a;
+  border-radius: 10px;
+  background: transparent;
+  color: #8a6d1d;
+  font-size: 13px;
+  font-weight: 700;
+}
+.app-reset:disabled { opacity: 0.6; }
+@media (prefers-color-scheme: dark) {
+  .app-reset { color: #e6c96b; border-color: #7a6220; }
+}
