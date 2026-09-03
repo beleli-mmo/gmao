@@ -48,7 +48,7 @@ export async function submitFieldTicket(input: NewTicketInput): Promise<SubmitRe
   const clientId = newClientId();
 
   const media = await Promise.all(
-    input.media.slice(0, 6).map(async (m) => ({
+    input.media.slice(0, 4).map(async (m) => ({
       kind: m.kind,
       mimeType: m.blob.type || 'application/octet-stream',
       dataBase64: await blobToBase64(m.blob),

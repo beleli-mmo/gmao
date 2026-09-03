@@ -25,6 +25,8 @@ const TYPE_LABEL: Record<TicketType, string> = {
   MAINTENANCE_PREVENTIVE: 'Maintenance préventive',
   DEMANDE_PIECE: 'Demande de pièce',
 };
+const MAX_PHOTOS = 4;
+
 const URGENCY_LABEL: Record<Urgency, { txt: string; hint: string }> = {
   N1_BLOQUANT: { txt: 'N1 — Bloquant', hint: 'Chantier à l’arrêt' },
   N2_MAJEUR: { txt: 'N2 — Majeur', hint: 'Gêne forte, contournable' },
@@ -106,13 +108,15 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
   async function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) return;
     const next = await Promise.all(
-      files.map(async (f) => {
+      files.slice(0, room).map(async (f) => {
         const blob = await downscaleImage(f);
         return { id: crypto.randomUUID(), blob, url: URL.createObjectURL(blob) };
       }),
     );
-    setPhotos((p) => [...p, ...next].slice(0, 6));
+    setPhotos((p) => [...p, ...next].slice(0, MAX_PHOTOS));
   }
   function removePhoto(id: string) {
     setPhotos((p) => {
@@ -324,8 +328,13 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
       <fieldset className="tf-group">
         <legend>Photos & audio</legend>
         <div className="tf-media-actions">
-          <button type="button" className="tf-btn tf-btn--ghost" onClick={() => cameraInputRef.current?.click()}>
-            📷 Photo
+          <button
+            type="button"
+            className="tf-btn tf-btn--ghost"
+            disabled={photos.length >= MAX_PHOTOS}
+            onClick={() => cameraInputRef.current?.click()}
+          >
+            📷 {photos.length >= MAX_PHOTOS ? `Photos (${MAX_PHOTOS}/${MAX_PHOTOS})` : `Photo (${photos.length}/${MAX_PHOTOS})`}
           </button>
           <button
             type="button"
