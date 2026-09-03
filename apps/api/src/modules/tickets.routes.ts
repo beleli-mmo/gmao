@@ -7,6 +7,7 @@ import { QualifyTicketBody, PlanTicketBody, CloseTicketBody } from '../shared';
 import { broadcast } from '../realtime';
 import { nextTicketReference } from '../lib/reference';
 import { recomputeTicketCosts } from '../lib/cost-imputation';
+import { signedGetUrl } from '../lib/object-store';
 import { randomUUID } from 'node:crypto';
 
 export const ticketsRouter = Router();
@@ -182,7 +183,13 @@ ticketsRouter.get('/:id', async (req, res, next) => {
   });
   if (!ticket) return res.status(404).json({ error: 'not_found' });
   const totalCost = ticket.costLines.reduce((s, l) => s + Number(l.amount), 0);
-  res.json({ ...ticket, totalCost });
+
+  // liens de téléchargement signés (valides 1 h) pour les pièces jointes
+  const attachments = await Promise.all(
+    ticket.attachments.map(async (a) => ({ ...a, url: await signedGetUrl(a.storageKey) })),
+  );
+
+  res.json({ ...ticket, attachments, totalCost });
  } catch (e) {
   next(e);
  }

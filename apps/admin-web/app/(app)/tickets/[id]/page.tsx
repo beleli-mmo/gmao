@@ -55,7 +55,40 @@ export default function TicketDetailPage() {
           {t.attachments.length > 0 && (
             <div className="card">
               <h2>Médias ({t.attachments.length})</h2>
-              <ul>{t.attachments.map((a) => <li key={a.id}>{a.kind} — {a.storageKey}</li>)}</ul>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {t.attachments.map((a) => {
+                  const url = (a as any).url as string | null;
+                  if (!url) {
+                    return (
+                      <span key={a.id} className="muted" style={{ fontSize: 12 }}>
+                        {a.kind} · stockage non configuré
+                      </span>
+                    );
+                  }
+                  if (a.kind === 'PHOTO') {
+                    return (
+                      <a key={a.id} href={url} target="_blank" rel="noreferrer">
+                        <img
+                          src={url}
+                          alt="Photo terrain"
+                          style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }}
+                        />
+                      </a>
+                    );
+                  }
+                  if (a.kind === 'VOICE_NOTE') {
+                    return <audio key={a.id} controls src={url} style={{ width: '100%' }} />;
+                  }
+                  if (a.kind === 'VIDEO') {
+                    return <video key={a.id} controls src={url} style={{ width: 240, borderRadius: 8 }} />;
+                  }
+                  return (
+                    <a key={a.id} href={url} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                      ⬇ {a.kind}
+                    </a>
+                  );
+                })}
+              </div>
             </div>
           )}
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { submitFieldTicket, type NewTicketInput } from '../db/outbox';
 import { localRef, pullReference } from '../db/pouch';
+import { downscaleImage } from '../lib/image';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import './ticket-form.css';
 
@@ -102,11 +103,16 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
     online && !!siteId && title.trim().length >= 3 && (!needsEquipment || !!equipmentId) && !submitting;
 
   // ── capture photo (input capture = ouvre l'appareil photo natif) ────
-  function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    const next = files.map((f) => ({ id: crypto.randomUUID(), blob: f, url: URL.createObjectURL(f) }));
-    setPhotos((p) => [...p, ...next].slice(0, 6));
     e.target.value = '';
+    const next = await Promise.all(
+      files.map(async (f) => {
+        const blob = await downscaleImage(f);
+        return { id: crypto.randomUUID(), blob, url: URL.createObjectURL(blob) };
+      }),
+    );
+    setPhotos((p) => [...p, ...next].slice(0, 6));
   }
   function removePhoto(id: string) {
     setPhotos((p) => {
