@@ -12,6 +12,43 @@ export const syncRouter = Router();
 syncRouter.use(requireAuth);
 
 /**
+ * Historique des demandes du technicien connecté (écran « Mes demandes »).
+ * GET /api/sync/my-tickets
+ */
+syncRouter.get('/my-tickets', async (req, res, next) => {
+  try {
+    const rows = await prisma.ticket.findMany({
+      where: { reporterId: req.user!.id },
+      orderBy: { createdAtField: 'desc' },
+      take: 60,
+      select: {
+        reference: true, title: true, type: true, urgency: true, status: true,
+        createdAtField: true, closedAt: true,
+        site: { select: { code: true } },
+        equipment: { select: { assetTag: true } },
+        lot: { select: { code: true } },
+      },
+    });
+    res.json({
+      data: rows.map((t) => ({
+        reference: t.reference,
+        title: t.title,
+        type: t.type,
+        urgency: t.urgency,
+        status: t.status,
+        createdAtField: t.createdAtField,
+        closedAt: t.closedAt,
+        siteCode: t.site?.code ?? null,
+        assetTag: t.equipment?.assetTag ?? null,
+        lotCode: t.lot?.code ?? null,
+      })),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
  * Référentiel descendant pour la PWA terrain (fonctionne hors ligne une fois mis en cache).
  * GET /api/sync/reference
  */

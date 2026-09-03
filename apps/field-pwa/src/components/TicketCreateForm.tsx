@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createFieldTicket, type NewTicketInput } from '../db/outbox';
-import { localRef } from '../db/pouch';
-import { useOnlineStatus, useSyncState } from '../hooks/useOnlineStatus';
+import { submitFieldTicket, type NewTicketInput } from '../db/outbox';
+import { localRef, pullReference } from '../db/pouch';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import './ticket-form.css';
 
 type TicketType = NewTicketInput['ticketType'];
@@ -32,7 +32,7 @@ const URGENCY_LABEL: Record<Urgency, { txt: string; hint: string }> = {
 
 export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEquipmentId, onCreated }: Props) {
   const online = useOnlineStatus();
-  const sync = useSyncState();
+  const [sent, setSent] = useState<{ reference: string } | null>(null);
 
   const [sites, setSites] = useState<RefSite[]>([]);
   const [equipments, setEquipments] = useState<RefEquipment[]>([]);
@@ -54,13 +54,16 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [recording, setRecording] = useState(false);
 
-  // ── chargement du référentiel local (fonctionne hors ligne) ──────────
+  // ── référentiel : cache local + rafraîchissement si en ligne ─────────
   useEffect(() => {
-    localRef.allDocs({ include_docs: true }).then((res) => {
-      const docs = res.rows.map((r) => r.doc as any).filter(Boolean);
-      setSites(docs.filter((d) => d.type === 'site'));
-      setEquipments(docs.filter((d) => d.type === 'equipment'));
-    });
+    const load = () =>
+      localRef.allDocs({ include_docs: true }).then((res) => {
+        const docs = res.rows.map((r) => r.doc as any).filter(Boolean);
+        setSites(docs.filter((d) => d.type === 'site'));
+        setEquipments(docs.filter((d) => d.type === 'equipment'));
+      });
+    load();
+    pullReference().then(load).catch(() => {});
   }, []);
 
   // pré-sélection via scan QR : par id résolu en priorité, sinon rapprochement qrPayload/assetTag
@@ -96,7 +99,7 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
   const needsEquipment = ticketType !== 'DEMANDE_PIECE';
 
   const canSubmit =
-    !!siteId && title.trim().length >= 3 && (!needsEquipment || !!equipmentId) && !submitting;
+    online && !!siteId && title.trim().length >= 3 && (!needsEquipment || !!equipmentId) && !submitting;
 
   // ── capture photo (input capture = ouvre l'appareil photo natif) ────
   function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
@@ -138,45 +141,69 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
     }
   }
 
-  // ── soumission : écrit dans PouchDB, la synchro se fera seule ───────
+  // ── soumission : envoi immédiat au serveur ─────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
-    try {
-      const media: NewTicketInput['media'] = [
-        ...photos.map((p) => ({ blob: p.blob, kind: 'PHOTO' as const, capturedAt: new Date().toISOString() })),
-        ...(voiceNote ? [{ blob: voiceNote.blob, kind: 'VOICE_NOTE' as const }] : []),
-      ];
-      const result = await createFieldTicket({
-        ticketType,
-        urgency,
-        title,
-        description,
-        siteId,
-        equipmentId: needsEquipment ? equipmentId || null : null,
-        qrPayload: scannedQrPayload,
-        meterKind: needsMeter ? (meterKind as any) : 'NONE',
-        meterValue: needsMeter && meterValue ? Number(meterValue) : null,
-        reporterId,
-        geo,
-        media,
-      });
-      // reset
+    const media: NewTicketInput['media'] = [
+      ...photos.map((p) => ({ blob: p.blob, kind: 'PHOTO' as const, capturedAt: new Date().toISOString() })),
+      ...(voiceNote ? [{ blob: voiceNote.blob, kind: 'VOICE_NOTE' as const }] : []),
+    ];
+    const res = await submitFieldTicket({
+      ticketType,
+      urgency,
+      title,
+      description,
+      siteId,
+      equipmentId: needsEquipment ? equipmentId || null : null,
+      qrPayload: scannedQrPayload,
+      meterKind: needsMeter ? (meterKind as any) : 'NONE',
+      meterValue: needsMeter && meterValue ? Number(meterValue) : null,
+      reporterId,
+      geo,
+      media,
+    });
+    setSubmitting(false);
+
+    if (res.ok) {
       photos.forEach((p) => URL.revokeObjectURL(p.url));
       if (voiceNote) URL.revokeObjectURL(voiceNote.url);
-      setPhotos([]);
-      setVoiceNote(null);
-      setTitle('');
-      setDescription('');
-      setMeterValue('');
-      onCreated?.(result);
-    } catch (err) {
-      setError((err as Error).message ?? 'Échec de l’enregistrement local');
-    } finally {
-      setSubmitting(false);
+      setSent({ reference: res.reference! });
+    } else {
+      setError(res.error ?? 'Échec de l’envoi');
     }
+  }
+
+  if (sent) {
+    return (
+      <div className="tf">
+        <div className="tf-sent">
+          <div className="tf-sent-check">✓</div>
+          <h2>Demande envoyée</h2>
+          <p className="tf-sent-ref">{sent.reference}</p>
+          <p className="tf-hint">Elle est arrivée au bureau. Vous pouvez la suivre dans « Mes demandes ».</p>
+          <button type="button" className="tf-btn tf-btn--primary" onClick={() => onCreated?.({ _id: '', clientId: '' })}>
+            Terminé
+          </button>
+          <button
+            type="button"
+            className="tf-btn tf-btn--ghost"
+            onClick={() => {
+              setSent(null);
+              setPhotos([]);
+              setVoiceNote(null);
+              setTitle('');
+              setDescription('');
+              setMeterValue('');
+            }}
+          >
+            Nouvelle demande
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -184,9 +211,9 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
       {/* bandeau connectivité */}
       <div className={`tf-net ${online ? 'is-online' : 'is-offline'}`} role="status">
         {online ? (
-          <span>● En ligne{sync.pending > 0 ? ` — ${sync.pending} à synchroniser` : ' — synchro à jour'}</span>
+          <span>● En ligne — l’envoi est immédiat</span>
         ) : (
-          <span>● Hors ligne — le ticket sera envoyé au retour du réseau</span>
+          <span>● Hors ligne — reconnectez-vous à Internet pour envoyer une demande</span>
         )}
       </div>
 
@@ -333,14 +360,14 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
         )}
       </fieldset>
 
-      {error && <p className="tf-error">{error}</p>}
+      {error && <p className="tf-error">⚠ {error}</p>}
 
       <button type="submit" className="tf-btn tf-btn--primary" disabled={!canSubmit}>
-        {submitting ? 'Enregistrement…' : online ? 'Envoyer le ticket' : 'Enregistrer (hors ligne)'}
+        {submitting ? 'Envoi en cours…' : online ? 'Envoyer la demande' : 'Hors ligne — envoi impossible'}
       </button>
       <p className="tf-hint">
-        Le ticket est d’abord stocké sur l’appareil. Il part automatiquement dès qu’une connexion est disponible —
-        vous pouvez fermer l’application sans risque de perte.
+        La demande est envoyée immédiatement au bureau. Sans connexion Internet, il n’est pas possible de
+        l’enregistrer — réessayez une fois le réseau revenu.
       </p>
     </form>
   );

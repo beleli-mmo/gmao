@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { onSync, type SyncSnapshot } from '../db/pouch';
 
 export function useOnlineStatus() {
   const [online, setOnline] = useState(navigator.onLine);
@@ -14,10 +13,4 @@ export function useOnlineStatus() {
     };
   }, []);
   return online;
-}
-
-export function useSyncState(): SyncSnapshot {
-  const [snap, setSnap] = useState<SyncSnapshot>({ state: 'offline', pending: 0 });
-  useEffect(() => onSync(setSnap), []);
-  return snap;
 }

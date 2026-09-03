@@ -128,3 +128,13 @@
   .tf-chip, .tf-field input, .tf-field select, .tf-field textarea, .tf-btn--ghost { background: #1b222b; }
   .tf-chip.is-selected { background: #16301d; }
 }
+
+/* ── accusé d'envoi ── */
+.tf-sent { text-align: center; padding: 32px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.tf-sent-check {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: #0b5d1e; color: #fff; font-size: 40px; line-height: 72px;
+}
+.tf-sent h2 { margin: 8px 0 0; font-size: 22px; }
+.tf-sent-ref { font-size: 18px; font-weight: 800; letter-spacing: 1px; margin: 0; color: #0b5d1e; }
+.tf-sent .tf-btn { width: 100%; }
