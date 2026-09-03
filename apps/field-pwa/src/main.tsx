@@ -85,7 +85,7 @@ function App() {
       <QrScanner
         onCancel={() => setScreen({ name: 'home' })}
         onIdentified={({ qrPayload, equipment }: { qrPayload: string; equipment: ResolvedEquipment | null }) =>
-          setScreen({ name: 'ticket', qrPayload, equipmentId: equipment?._id })
+          setScreen({ name: 'ticket', qrPayload, equipmentId: equipment?.id })
         }
       />
     );

@@ -42,6 +42,7 @@ export function parseQrPayload(raw: string): ParsedQr {
 }
 
 export interface ResolvedEquipment {
+  id: string;
   _id: string;
   assetTag: string;
   name: string;

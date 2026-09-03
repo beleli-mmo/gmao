@@ -7,8 +7,8 @@ import './ticket-form.css';
 type TicketType = NewTicketInput['ticketType'];
 type Urgency = NewTicketInput['urgency'];
 
-interface RefSite { _id: string; type: 'site'; code: string; name: string }
-interface RefEquipment { _id: string; type: 'equipment'; assetTag: string; name: string; meterKind: 'HEURES' | 'KM' | 'NONE'; currentMeter: number; siteId?: string }
+interface RefSite { id: string; _id: string; type: 'site'; code: string; name: string }
+interface RefEquipment { id: string; _id: string; type: 'equipment'; assetTag: string; qrPayload?: string; name: string; meterKind: 'HEURES' | 'KM' | 'NONE'; currentMeter: number; siteId?: string | null }
 
 interface Props {
   reporterId: string;
@@ -67,13 +67,13 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
   useEffect(() => {
     if (!equipments.length) return;
     const eq =
-      (preselectedEquipmentId && equipments.find((e) => e._id === preselectedEquipmentId)) ||
+      (preselectedEquipmentId && equipments.find((e) => e.id === preselectedEquipmentId || e._id === preselectedEquipmentId)) ||
       (scannedQrPayload &&
         equipments.find(
-          (e) => (e as any).qrPayload === scannedQrPayload || e.assetTag === scannedQrPayload,
+          (e) => e.qrPayload === scannedQrPayload || e.assetTag === scannedQrPayload,
         ));
     if (eq) {
-      setEquipmentId(eq._id);
+      setEquipmentId(eq.id);
       if (eq.siteId) setSiteId(eq.siteId);
     }
   }, [scannedQrPayload, preselectedEquipmentId, equipments]);
@@ -88,7 +88,7 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
   }, []);
 
   const selectedEquipment = useMemo(
-    () => equipments.find((e) => e._id === equipmentId) ?? null,
+    () => equipments.find((e) => e.id === equipmentId) ?? null,
     [equipments, equipmentId],
   );
   const meterKind = selectedEquipment?.meterKind ?? 'NONE';
@@ -231,7 +231,7 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
         <select value={siteId} onChange={(e) => setSiteId(e.target.value)} required>
           <option value="">— Sélectionner —</option>
           {sites.map((s) => (
-            <option key={s._id} value={s._id}>
+            <option key={s.id} value={s.id}>
               {s.code} · {s.name}
             </option>
           ))}
@@ -247,7 +247,7 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
             {equipments
               .filter((e) => !siteId || !e.siteId || e.siteId === siteId)
               .map((e) => (
-                <option key={e._id} value={e._id}>
+                <option key={e.id} value={e.id}>
                   {e.assetTag} · {e.name}
                 </option>
               ))}
