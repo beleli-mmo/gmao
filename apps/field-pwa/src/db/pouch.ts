@@ -45,7 +45,7 @@ function authHeaders(): HeadersInit {
 
 async function countPending(): Promise<number> {
   const res = await localTickets.allDocs({ include_docs: true, startkey: 'ticket:', endkey: 'ticket:￿' });
-  return res.rows.filter((r) => (r.doc as any)?._sync?.pushed === false).length;
+  return res.rows.filter((r) => (r.doc as any)?.syncState?.pushed === false).length;
 }
 
 // ── PULL : référentiel descendant ────────────────────────────────────
@@ -69,7 +69,7 @@ export async function pullReference(): Promise<void> {
 // ── PUSH : remontée des DI terrain ──────────────────────────────────
 export async function pushTickets(): Promise<void> {
   const all = await localTickets.allDocs({ include_docs: true, attachments: true, binary: false, startkey: 'ticket:', endkey: 'ticket:￿' });
-  const queued = all.rows.map((r) => r.doc as any).filter((d) => d && d._sync?.pushed === false);
+  const queued = all.rows.map((r) => r.doc as any).filter((d) => d && d.syncState?.pushed === false);
   if (!queued.length) return;
 
   const payload = queued.map((d) => {
@@ -108,7 +108,7 @@ export async function pushTickets(): Promise<void> {
     const res = byClient.get(d.clientId);
     if (res && (res.status === 'created' || res.status === 'exists')) {
       const fresh: any = await localTickets.get(d._id);
-      fresh._sync = { pushed: true, syncedAt: Date.now() };
+      fresh.syncState = { pushed: true, syncedAt: Date.now() };
       fresh.serverRef = res.reference || fresh.serverRef;
       await localTickets.put(fresh);
     }

@@ -6,7 +6,7 @@ import type { FieldTicketDoc } from '../shared';
  * Écriture d'un ticket terrain dans PouchDB.
  * - `_id` = `ticket:<uuid>` ; `clientId` identique = clé d'idempotence côté serveur
  * - les médias sont attachés en pièces jointes CouchDB (binaire, répliqué tel quel)
- * - `_sync.pushed` bascule à true quand la réplication confirme (écouté dans pouch.ts)
+ * - `syncState.pushed` bascule à true quand la réplication confirme (écouté dans pouch.ts)
  */
 export interface NewTicketInput {
   ticketType: FieldTicketDoc['ticketType'];
@@ -59,7 +59,7 @@ export async function createFieldTicket(input: NewTicketInput): Promise<{ _id: s
     media,
     fieldSignature: null,
     localStatus: 'EN_ATTENTE' as const,
-    _sync: { pushed: false, queuedAt: Date.now() },
+    syncState: { pushed: false, queuedAt: Date.now() },
   };
 
   await localTickets.put(doc as any);
@@ -73,7 +73,7 @@ export async function attachFieldSignature(_id: string, signaturePng: Blob, sign
   doc._attachments['signature.png'] = { content_type: 'image/png', data: signaturePng };
   doc.fieldSignature = { attName: 'signature.png', signerName, signedAt: new Date().toISOString() };
   doc.localStatus = 'VALIDE_TERRAIN';
-  doc._sync = { pushed: false, queuedAt: Date.now() };
+  doc.syncState = { pushed: false, queuedAt: Date.now() };
   await localTickets.put(doc);
 }
 
