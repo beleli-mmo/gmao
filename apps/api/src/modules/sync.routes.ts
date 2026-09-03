@@ -98,7 +98,7 @@ const FieldTicket = z.object({
   description: z.string().max(4000).optional(),
   siteId: z.string().uuid(),
   equipmentId: z.string().uuid().nullish(),
-  reporterId: z.string().uuid(),
+  reporterId: z.string().uuid().optional(), // ignoré : le demandeur = l'utilisateur authentifié
   meterKind: z.enum(['HEURES', 'KM', 'NONE']).default('NONE'),
   meterValue: z.number().nonnegative().nullish(),
   createdAtField: z.string().datetime(),
@@ -111,7 +111,13 @@ const FieldTicket = z.object({
 syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'PARK_MANAGER', 'ADMIN'), async (req, res, next) => {
   try {
     const { tickets } = z.object({ tickets: z.array(FieldTicket).min(1).max(50) }).parse(req.body);
-    const results: { clientId: string; id: string; reference: string; status: 'created' | 'exists' }[] = [];
+    type Res = { clientId: string; id: string; reference: string; status: 'created' | 'exists' | 'error'; error?: string };
+    const results: Res[] = [];
+
+    // le demandeur EST l'utilisateur authentifié (on ne fait pas confiance au corps de requête)
+    const reporterId = req.user!.id;
+    const reporter = await prisma.user.findUnique({ where: { id: reporterId } });
+    if (!reporter) return res.status(401).json({ error: 'compte_introuvable' });
 
     for (const doc of tickets) {
       const existing = await prisma.ticket.findUnique({ where: { clientId: doc.clientId }, select: { id: true, reference: true } });
@@ -119,9 +125,6 @@ syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'PARK_MANAGER', 'ADMIN'
         results.push({ clientId: doc.clientId, id: existing.id, reference: existing.reference, status: 'exists' });
         continue;
       }
-
-      const reporter = await prisma.user.findUnique({ where: { id: doc.reporterId } });
-      if (!reporter) { results.push({ clientId: doc.clientId, id: '', reference: '', status: 'exists' }); continue; }
       const needsEquipment = doc.type !== 'DEMANDE_PIECE';
 
       // médias hors transaction (upload objet)
@@ -140,6 +143,7 @@ syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'PARK_MANAGER', 'ADMIN'
         await putObject(sigKey, buf, 'image/png');
       }
 
+      try {
       const created = await prisma.$transaction(async (tx) => {
         const eq = needsEquipment && doc.equipmentId ? await tx.equipment.findUnique({ where: { id: doc.equipmentId } }) : null;
 
@@ -155,7 +159,7 @@ syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'PARK_MANAGER', 'ADMIN'
                 siteId: doc.siteId,
                 equipmentId: needsEquipment ? doc.equipmentId ?? null : null,
                 lotId: eq?.lotId ?? null,
-                reporterId: doc.reporterId,
+                reporterId: reporterId,
                 meterAtReport: doc.meterValue ?? null,
                 createdAtField: new Date(doc.createdAtField),
               },
@@ -169,7 +173,7 @@ syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'PARK_MANAGER', 'ADMIN'
         const ticket = t!;
 
         if (eq && doc.meterValue != null && doc.meterKind !== 'NONE') {
-          await tx.meterReading.create({ data: { equipmentId: eq.id, value: doc.meterValue, kind: doc.meterKind, source: 'FIELD', recordedById: doc.reporterId, ticketId: ticket.id } });
+          await tx.meterReading.create({ data: { equipmentId: eq.id, value: doc.meterValue, kind: doc.meterKind, source: 'FIELD', recordedById: reporterId, ticketId: ticket.id } });
           await tx.equipment.update({ where: { id: eq.id }, data: { currentMeter: doc.meterValue } });
         }
         for (const rp of doc.requestedParts) {
@@ -182,15 +186,15 @@ syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'PARK_MANAGER', 'ADMIN'
 
         await applyTransition(tx, {
           ticketId: ticket.id, to: 'EN_ATTENTE',
-          actor: { id: doc.reporterId, role: 'FIELD_MANAGER' }, origin: 'SYNC', note: 'Création terrain (synchro)',
+          actor: { id: reporterId, role: 'FIELD_MANAGER' }, origin: 'SYNC', note: 'Création terrain (synchro)',
         });
 
         if (doc.fieldSignature && sigKey) {
           // validation terrain hors ligne : ne s'applique que si l'atelier a déjà rendu le service
           const cur = await tx.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
           if (cur.status === 'TRAVAUX_TERMINES') {
-            await tx.ticketSignature.create({ data: { ticketId: ticket.id, signerId: doc.reporterId, signerName: doc.fieldSignature.signerName, signatureKey: sigKey, signedAt: new Date(doc.fieldSignature.signedAt) } });
-            await applyTransition(tx, { ticketId: ticket.id, to: 'VALIDE_TERRAIN', actor: { id: doc.reporterId, role: 'FIELD_MANAGER' }, origin: 'SYNC' });
+            await tx.ticketSignature.create({ data: { ticketId: ticket.id, signerId: reporterId, signerName: doc.fieldSignature.signerName, signatureKey: sigKey, signedAt: new Date(doc.fieldSignature.signedAt) } });
+            await applyTransition(tx, { ticketId: ticket.id, to: 'VALIDE_TERRAIN', actor: { id: reporterId, role: 'FIELD_MANAGER' }, origin: 'SYNC' });
           }
         }
 
@@ -202,6 +206,10 @@ syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'PARK_MANAGER', 'ADMIN'
 
       results.push({ clientId: doc.clientId, id: created.id, reference: created.reference, status: 'created' });
       broadcast({ type: 'ticket.synced', clientId: doc.clientId });
+      } catch (err: any) {
+        console.error('[sync/tickets] échec pour', doc.clientId, err?.code || err?.message);
+        results.push({ clientId: doc.clientId, id: '', reference: '', status: 'error', error: err?.message?.slice(0, 200) ?? 'échec' });
+      }
     }
 
     res.json({ results });

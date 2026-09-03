@@ -1,6 +1,14 @@
-import { v4 as uuid } from 'uuid';
 import { submitTicket, type SubmitResult } from './pouch';
 import type { FieldTicketDoc } from '../shared';
+
+/** Identifiant unique par demande (clé d'idempotence côté serveur). */
+function newClientId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `di-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+}
 
 /** Données saisies dans le formulaire terrain. */
 export interface NewTicketInput {
@@ -37,7 +45,7 @@ function blobToBase64(blob: Blob): Promise<string> {
  *  - échec  → { ok:false, error } ; le formulaire reste rempli pour réessayer
  */
 export async function submitFieldTicket(input: NewTicketInput): Promise<SubmitResult> {
-  const clientId = uuid();
+  const clientId = newClientId();
 
   const media = await Promise.all(
     input.media.slice(0, 6).map(async (m) => ({

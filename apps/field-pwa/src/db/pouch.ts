@@ -70,7 +70,10 @@ export async function submitTicket(payload: any): Promise<SubmitResult> {
     if (!r.ok) return { ok: false, error: `Le serveur a refusé la demande (${r.status})` };
     const { results } = await r.json();
     const res = results?.[0];
-    if (!res || (res.status !== 'created' && res.status !== 'exists')) {
+    if (!res || res.status === 'error' || !res.reference) {
+      return { ok: false, error: res?.error ? `Serveur : ${res.error}` : 'La demande n’a pas pu être enregistrée' };
+    }
+    if (res.status !== 'created' && res.status !== 'exists') {
       return { ok: false, error: 'Réponse inattendue du serveur' };
     }
     // archive locale (sans les binaires)
