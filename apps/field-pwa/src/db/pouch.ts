@@ -43,6 +43,17 @@ function authHeaders(): HeadersInit {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.token ?? ''}` };
 }
 
+/** Session expirée : on efface et on recharge → écran de connexion. Les DI locales
+ *  non poussées restent en base et repartent après reconnexion. */
+function handleAuth(status: number) {
+  if (status === 401) {
+    stopSync();
+    localStorage.removeItem('gmao.session');
+    location.reload();
+    throw new Error('session expirée');
+  }
+}
+
 async function countPending(): Promise<number> {
   const res = await localTickets.allDocs({ include_docs: true, startkey: 'ticket:', endkey: 'ticket:￿' });
   return res.rows.filter((r) => (r.doc as any)?.syncState?.pushed === false).length;
@@ -51,6 +62,7 @@ async function countPending(): Promise<number> {
 // ── PULL : référentiel descendant ────────────────────────────────────
 export async function pullReference(): Promise<void> {
   const r = await fetch(`${API}/api/sync/reference`, { headers: authHeaders() });
+  handleAuth(r.status);
   if (!r.ok) throw new Error(`reference ${r.status}`);
   const data = await r.json();
 
@@ -100,6 +112,7 @@ export async function pushTickets(): Promise<void> {
   });
 
   const r = await fetch(`${API}/api/sync/tickets`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ tickets: payload }) });
+  handleAuth(r.status);
   if (!r.ok) throw new Error(`push ${r.status}`);
   const { results } = await r.json();
 
