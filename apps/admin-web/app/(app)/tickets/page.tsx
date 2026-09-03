@@ -19,9 +19,12 @@ export default function TicketsPage() {
   if (urgency) qs.set('urgency', urgency);
   qs.set('take', '100');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, dataUpdatedAt, refetch } = useQuery({
     queryKey: ['tickets', status, urgency],
     queryFn: () => endpoints.ticketsList(`?${qs.toString()}`),
+    refetchInterval: 10_000,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
   });
 
   const lotCode = lots.data?.data.find((l) => l.id === lotId)?.code;
@@ -31,7 +34,13 @@ export default function TicketsPage() {
     <>
       <div className="shell-head">
         <h1>Demandes d’intervention</h1>
-        <Link href="/tickets/new" className="btn">+ Nouvelle DI</Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span className="muted" style={{ fontSize: 12 }}>
+            {isFetching ? 'Actualisation…' : dataUpdatedAt ? `à jour · ${new Date(dataUpdatedAt).toLocaleTimeString('fr-FR')}` : ''}
+          </span>
+          <button type="button" className="btn btn-ghost" onClick={() => refetch()} disabled={isFetching}>↻ Actualiser</button>
+          <Link href="/tickets/new" className="btn">+ Nouvelle DI</Link>
+        </div>
       </div>
 
       <div className="toolbar">

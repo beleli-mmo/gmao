@@ -9,12 +9,14 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 10_000,
+            staleTime: 5_000,
             retry: 1,
             refetchOnWindowFocus: true,
+            refetchOnMount: 'always',
             // temps réel par polling quand l'API n'expose pas de WebSocket (Vercel)
             refetchInterval: process.env.NEXT_PUBLIC_WS_URL ? false : 15_000,
-            refetchIntervalInBackground: false,
+            // continue de rafraîchir même si l'onglet n'a pas le focus (console de supervision)
+            refetchIntervalInBackground: true,
           },
         },
       }),
