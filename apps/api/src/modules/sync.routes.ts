@@ -108,7 +108,8 @@ const FieldTicket = z.object({
   fieldSignature: z.object({ signerName: z.string().min(2), signedAt: z.string().datetime(), dataBase64: z.string() }).nullish(),
 });
 
-syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'PARK_MANAGER', 'ADMIN'), async (req, res, next) => {
+// tout personnel de terrain peut ouvrir une DI (chef de chantier, mécanicien, resp. parc, admin)
+syncRouter.post('/tickets', requireRole('FIELD_MANAGER', 'MECHANIC', 'PARK_MANAGER', 'ADMIN'), async (req, res, next) => {
   try {
     const { tickets } = z.object({ tickets: z.array(FieldTicket).min(1).max(50) }).parse(req.body);
     type Res = { clientId: string; id: string; reference: string; status: 'created' | 'exists' | 'error'; error?: string };

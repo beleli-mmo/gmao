@@ -67,6 +67,9 @@ export async function submitTicket(payload: any): Promise<SubmitResult> {
       authExpired();
       return { ok: false, error: 'Session expirée — reconnectez-vous' };
     }
+    if (r.status === 403) {
+      return { ok: false, error: "Votre compte n'a pas le droit d'ouvrir une demande. Contactez l'administrateur." };
+    }
     if (!r.ok) return { ok: false, error: `Le serveur a refusé la demande (${r.status})` };
     const { results } = await r.json();
     const res = results?.[0];
