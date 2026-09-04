@@ -96,7 +96,7 @@ export default function NewTicketPage() {
           <span>Projet / site (imputation)</span>
           <select value={f.siteId} onChange={(e) => set('siteId', e.target.value)} required>
             <option value="">— Sélectionner —</option>
-            {sites.data?.data.map((s) => <option key={s.id} value={s.id}>{s.code} · {s.name}</option>)}
+            {sites.data?.data.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </label>
 
@@ -105,7 +105,7 @@ export default function NewTicketPage() {
             <span>Actif concerné (le lot est repris automatiquement)</span>
             <select value={f.equipmentId} onChange={(e) => set('equipmentId', e.target.value)} required>
               <option value="">— Sélectionner —</option>
-              {equipment.data?.data.map((e) => <option key={e.id} value={e.id}>{e.assetTag} · {e.name}</option>)}
+              {equipment.data?.data.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </label>
         )}

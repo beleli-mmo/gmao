@@ -114,7 +114,7 @@ export default function PlanningPage() {
             <div key={t.id} className="planrow">
               <div className="planrow-info">
                 <Link href={`/tickets/${t.id}`}>{t.reference}</Link> · {t.title}
-                <div className="muted">{t.site.code}{t.equipment ? ` · ${t.equipment.assetTag}` : ''}</div>
+                <div className="muted">{t.site.name}{t.equipment ? ` · ${t.equipment.name}` : ''}</div>
               </div>
               <UrgencyBadge urgency={t.urgency} />
               <select value={a.kind} onChange={(e) => setPlan(t.id, { kind: e.target.value as any, who: '' })}>
@@ -153,7 +153,7 @@ export default function PlanningPage() {
                 <tr key={iv.id}>
                   <td>{datetime(iv.scheduledFor).split(' ').slice(-1)}</td>
                   <td><Link href={`/tickets/${iv.ticket?.id ?? iv.ticketId}`}>{iv.ticket?.reference ?? '—'}</Link></td>
-                  <td className="muted">{iv.ticket?.site?.code}{iv.ticket?.equipment?.assetTag ? ` · ${iv.ticket.equipment.assetTag}` : ''}</td>
+                  <td className="muted">{iv.ticket?.site?.name}{iv.ticket?.equipment?.name ? ` · ${iv.ticket.equipment.name}` : ''}</td>
                   <td>{iv.mechanic?.fullName ?? iv.provider?.name ?? iv.assigneeKind}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     {editing === iv.id ? (

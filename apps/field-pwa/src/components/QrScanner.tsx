@@ -89,7 +89,7 @@ export function QrScanner({ onIdentified, onCancel }: Props) {
         <div className={`qr-panel ${hit.equipment ? 'qr-panel--ok' : 'qr-panel--warn'}`}>
           {hit.equipment ? (
             <>
-              <strong>{hit.equipment.assetTag} · {hit.equipment.name}</strong>
+              <strong>{hit.equipment.name}</strong>
               <span>Engin identifié — ouverture du ticket…</span>
             </>
           ) : (

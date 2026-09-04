@@ -22,11 +22,11 @@ export default function CarnetDeSantePage() {
       <div className="shell-head">
         <div>
           <button className="btn btn-ghost" onClick={() => router.push('/parc')} style={{ padding: '4px 10px', fontSize: 13 }}>← Actifs</button>
-          <h1 style={{ marginTop: 8 }}>{e.assetTag}</h1>
-          <p className="muted">{e.name}</p>
+          <h1 style={{ marginTop: 8 }}>{e.name}</h1>
+          <p className="muted">{e.assetTag}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {e.lot && <span className="badge" style={{ background: `${e.lot.color}22`, color: e.lot.color }}>{e.lot.code} · {e.lot.name}</span>}
+          {e.lot && <span className="badge" style={{ background: `${e.lot.color}22`, color: e.lot.color }}>{e.lot.name}</span>}
           <EquipmentStatusBadge status={e.status} />
         </div>
       </div>
@@ -44,7 +44,7 @@ export default function CarnetDeSantePage() {
             <h2>Identification</h2>
             <table>
               <tbody>
-                <tr><th>Projet / site</th><td>{e.currentSite ? `${e.currentSite.code} · ${e.currentSite.name}` : '—'}</td></tr>
+                <tr><th>Projet / site</th><td>{e.currentSite ? e.currentSite.name : '—'}</td></tr>
                 <tr><th>Zone / niveau</th><td>{e.zone ?? '—'}</td></tr>
                 <tr><th>Nature</th><td>{e.kind}</td></tr>
                 <tr><th>Criticité</th><td>{CRITICALITY_LABEL[e.criticality ?? 'STANDARD']}</td></tr>

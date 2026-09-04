@@ -105,8 +105,11 @@ export interface MyTicket {
   status: string;
   createdAtField: string;
   siteCode?: string;
+  siteName?: string;
   assetTag?: string;
+  assetName?: string;
   lotCode?: string;
+  lotName?: string;
   fromServer: boolean;
 }
 

@@ -24,9 +24,9 @@ syncRouter.get('/my-tickets', async (req, res, next) => {
       select: {
         reference: true, title: true, type: true, urgency: true, status: true,
         createdAtField: true, closedAt: true,
-        site: { select: { code: true } },
-        equipment: { select: { assetTag: true } },
-        lot: { select: { code: true } },
+        site: { select: { code: true, name: true } },
+        equipment: { select: { assetTag: true, name: true } },
+        lot: { select: { code: true, name: true } },
       },
     });
     res.json({
@@ -39,8 +39,11 @@ syncRouter.get('/my-tickets', async (req, res, next) => {
         createdAtField: t.createdAtField,
         closedAt: t.closedAt,
         siteCode: t.site?.code ?? null,
+        siteName: t.site?.name ?? null,
         assetTag: t.equipment?.assetTag ?? null,
+        assetName: t.equipment?.name ?? null,
         lotCode: t.lot?.code ?? null,
+        lotName: t.lot?.name ?? null,
       })),
     });
   } catch (e) {

@@ -76,9 +76,9 @@ export default function DashboardPage() {
                 {blocking.data.data.map((t) => (
                   <tr key={t.id}>
                     <td><Link href={`/tickets/${t.id}`}>{t.reference}</Link></td>
-                    <td title={t.site.code}>{t.site.name}</td>
-                    <td>{t.lot ? <span className="badge" style={{ background: `${t.lot.color}22`, color: t.lot.color }}>{t.lot.code}</span> : '—'}</td>
-                    <td title={t.equipment?.assetTag ?? undefined}>{t.equipment?.name ?? '—'}</td>
+                    <td>{t.site.name}</td>
+                    <td>{t.lot ? <span style={{ color: t.lot.color, fontWeight: 600 }}>{t.lot.name}</span> : '—'}</td>
+                    <td>{t.equipment?.name ?? '—'}</td>
                     <td><TicketStatusBadge status={t.status} /></td>
                     <td className="muted">{datetime(t.createdAtField)}</td>
                   </tr>

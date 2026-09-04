@@ -73,8 +73,8 @@ export function MyTicketsList() {
             <div className="mt-title">{t.title}</div>
             <div className="mt-meta">
               {URGENCY_LABEL[t.urgency] ?? ''} · {TYPE_LABEL[t.type] ?? t.type}
-              {t.assetTag ? ` · ${t.assetTag}` : ''}
-              {t.siteCode ? ` · ${t.siteCode}` : ''}
+              {t.assetName || t.assetTag ? ` · ${t.assetName ?? t.assetTag}` : ''}
+              {t.siteName || t.siteCode ? ` · ${t.siteName ?? t.siteCode}` : ''}
             </div>
             <div className="mt-date">{fmtDate(t.createdAtField)}{!t.fromServer && ' · en attente de confirmation bureau'}</div>
           </li>

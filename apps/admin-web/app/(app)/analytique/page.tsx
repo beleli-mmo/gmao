@@ -56,7 +56,7 @@ export default function AnalytiquePage() {
                 <tbody>
                   {trpp.data.byLot.map((l) => (
                     <tr key={l.lot_code}>
-                      <td>{l.lot_code} · {l.lot_name}</td>
+                      <td>{l.lot_name}</td>
                       <td>{l.respected}/{l.total}</td>
                       <td style={{ textAlign: 'right' }}>
                         <span className={`badge tone-${l.pct >= 95 ? 'good' : l.pct >= 80 ? 'warning' : 'critical'}`}>{l.pct.toFixed(0)} %</span>
@@ -75,7 +75,7 @@ export default function AnalytiquePage() {
           <table>
             <thead><tr><th>Projet</th><th style={{ textAlign: 'right' }}>Total imputé</th></tr></thead>
             <tbody>
-              {sumBy(bySite.data?.rows ?? [], (r) => `${r.site_code} · ${r.site_name}`).map((r) => (
+              {sumBy(bySite.data?.rows ?? [], (r) => r.site_name).map((r) => (
                 <tr key={r.key}><td>{r.key}</td><td style={{ textAlign: 'right' }}>{money(r.total)}</td></tr>
               ))}
               {bySite.data && !bySite.data.rows.length && <tr><td colSpan={2} className="muted">Aucun coût sur la période.</td></tr>}
@@ -92,7 +92,7 @@ export default function AnalytiquePage() {
             <tbody>
               {(tco.data?.rows ?? []).map((r: any) => (
                 <tr key={r.asset_tag}>
-                  <td>{r.asset_tag}<div className="muted">{r.name}</div></td>
+                  <td>{r.name}<div className="muted">{r.asset_tag}</div></td>
                   <td style={{ textAlign: 'right' }}>{money(r.maintenance)}</td>
                   <td style={{ textAlign: 'right' }}>{r.tco_per_unit ? money(r.tco_per_unit) : '—'}</td>
                 </tr>
@@ -108,7 +108,7 @@ export default function AnalytiquePage() {
             <tbody>
               {(rel.data?.rows ?? []).map((r: any) => (
                 <tr key={r.asset_tag}>
-                  <td>{r.asset_tag}<div className="muted">{r.name}</div></td>
+                  <td>{r.name}<div className="muted">{r.asset_tag}</div></td>
                   <td>{r.incidents}</td>
                   <td>{r.mttr_hours?.toFixed(1) ?? '—'}</td>
                   <td>{r.unavailability_pct?.toFixed(1) ?? '—'} %</td>

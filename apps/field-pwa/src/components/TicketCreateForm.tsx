@@ -269,7 +269,7 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
           <option value="">— Sélectionner —</option>
           {sites.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.code} · {s.name}
+              {s.name}
             </option>
           ))}
         </select>
@@ -285,7 +285,7 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
               .filter((e) => !siteId || !e.siteId || e.siteId === siteId)
               .map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.assetTag} · {e.name}
+                  {e.name}
                 </option>
               ))}
           </select>

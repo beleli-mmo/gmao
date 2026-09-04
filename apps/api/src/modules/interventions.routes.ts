@@ -35,8 +35,8 @@ interventionsRouter.get('/', async (req, res, next) => {
         ticket: {
           select: {
             id: true, reference: true, title: true, status: true, urgency: true,
-            site: { select: { code: true } },
-            equipment: { select: { assetTag: true } },
+            site: { select: { code: true, name: true } },
+            equipment: { select: { assetTag: true, name: true } },
           },
         },
         mechanic: { select: { id: true, fullName: true } },

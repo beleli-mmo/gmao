@@ -21,7 +21,7 @@ interface Row {
 export function CostBreakdownChart({ rows }: { rows: Row[] }) {
   const byKey = new Map<string, Record<string, number | string>>();
   for (const r of rows) {
-    if (!byKey.has(r.code)) byKey.set(r.code, { label: `${r.code} · ${r.name}` });
+    if (!byKey.has(r.code)) byKey.set(r.code, { label: r.name });
     byKey.get(r.code)![r.kind] = Number(r.total);
   }
   const data = [...byKey.values()].sort((a, b) => sum(b) - sum(a));

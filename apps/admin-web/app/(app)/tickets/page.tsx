@@ -58,7 +58,7 @@ export default function TicketsPage() {
         </select>
         <select value={lotId} onChange={(e) => setLotId(e.target.value)}>
           <option value="">Tous les lots</option>
-          {lots.data?.data.map((l) => <option key={l.id} value={l.id}>{l.code} · {l.name}</option>)}
+          {lots.data?.data.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
       </div>
 
@@ -74,9 +74,9 @@ export default function TicketsPage() {
                 <td><Link href={`/tickets/${t.id}`}>{t.reference}</Link></td>
                 <td className="muted">{TICKET_TYPE_LABEL[t.type] ?? t.type}</td>
                 <td>{t.title}</td>
-                <td title={t.site.code}>{t.site.name}</td>
-                <td>{t.lot ? <span className="badge" style={{ background: `${t.lot.color}22`, color: t.lot.color }}>{t.lot.code}</span> : '—'}</td>
-                <td title={t.equipment?.assetTag ?? ''}>{t.equipment?.name ?? '—'}</td>
+                <td>{t.site.name}</td>
+                <td>{t.lot ? <span style={{ color: t.lot.color, fontWeight: 600 }}>{t.lot.name}</span> : '—'}</td>
+                <td>{t.equipment?.name ?? '—'}</td>
                 <td><UrgencyBadge urgency={t.urgency} /></td>
                 <td><TicketStatusBadge status={t.status} /></td>
                 <td className="muted">{datetime(t.createdAtField)}</td>

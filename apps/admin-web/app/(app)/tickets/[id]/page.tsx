@@ -22,7 +22,7 @@ export default function TicketDetailPage() {
           <p className="muted">{t.title}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {(t as any).lot && <span className="badge" style={{ background: `${(t as any).lot.color}22`, color: (t as any).lot.color }}>{(t as any).lot.code}</span>}
+          {(t as any).lot && <span className="badge" style={{ background: `${(t as any).lot.color}22`, color: (t as any).lot.color }}>{(t as any).lot.name}</span>}
           <UrgencyBadge urgency={t.urgency} />
           <TicketStatusBadge status={t.status} />
         </div>
@@ -34,9 +34,9 @@ export default function TicketDetailPage() {
             <h2>Contexte</h2>
             <table>
               <tbody>
-                <tr><th>Projet / site</th><td>{t.site.code} · {t.site.name}</td></tr>
-                <tr><th>Lot technique</th><td>{(t as any).lot ? `${(t as any).lot.code} · ${(t as any).lot.name}` : '—'}</td></tr>
-                <tr><th>Actif concerné</th><td>{t.equipment ? `${t.equipment.assetTag} · ${t.equipment.name}` : '—'}</td></tr>
+                <tr><th>Projet / site</th><td>{t.site.name}</td></tr>
+                <tr><th>Lot technique</th><td>{(t as any).lot ? (t as any).lot.name : '—'}</td></tr>
+                <tr><th>Actif concerné</th><td>{t.equipment ? t.equipment.name : '—'}</td></tr>
                 <tr><th>Nature</th><td>{TICKET_TYPE_LABEL[t.type] ?? t.type}</td></tr>
                 {t.meterAtReport != null && <tr><th>Index compteur</th><td>{t.meterAtReport}</td></tr>}
                 {t.dueDate && <tr><th>Échéance préventif</th><td>{datetime(t.dueDate)}</td></tr>}

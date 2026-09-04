@@ -80,13 +80,13 @@ export default function ParcPage() {
           <label className="fld"><span>Projet / site</span>
             <select value={f.siteId} onChange={(e) => set('siteId', e.target.value)} required>
               <option value="">—</option>
-              {sites.data?.data.map((s) => <option key={s.id} value={s.id}>{s.code}</option>)}
+              {sites.data?.data.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </label>
           <label className="fld"><span>Lot technique</span>
             <select value={f.lotId} onChange={(e) => set('lotId', e.target.value)} required>
               <option value="">—</option>
-              {lots.data?.data.map((l) => <option key={l.id} value={l.id}>{l.code} · {l.name}</option>)}
+              {lots.data?.data.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
           </label>
           <label className="fld"><span>Zone / niveau</span><input value={f.zone} onChange={(e) => set('zone', e.target.value)} placeholder="RDC, N2, Toiture…" /></label>
@@ -114,7 +114,7 @@ export default function ParcPage() {
       <div className="toolbar">
         <select value={lotFilter} onChange={(e) => setLotFilter(e.target.value)}>
           <option value="">Tous les lots</option>
-          {lots.data?.data.map((l) => <option key={l.id} value={l.id}>{l.code} · {l.name}</option>)}
+          {lots.data?.data.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">Tous les statuts</option>
@@ -133,7 +133,7 @@ export default function ParcPage() {
               <tr key={e.id}>
                 <td><Link href={`/parc/${e.id}`}>{e.assetTag}</Link></td>
                 <td>{e.name}</td>
-                <td>{e.lot ? <span className="badge" style={{ background: `${e.lot.color}22`, color: e.lot.color }}>{e.lot.code}</span> : '—'}</td>
+                <td>{e.lot ? <span style={{ color: e.lot.color, fontWeight: 600 }}>{e.lot.name}</span> : '—'}</td>
                 <td className="muted">{e.zone ?? '—'}</td>
                 <td>{CRITICALITY_LABEL[e.criticality ?? 'STANDARD']}</td>
                 <td>{e.meterKind === 'NONE' ? '—' : `${e.currentMeter} ${e.meterKind === 'HEURES' ? 'h' : 'km'}`}</td>
