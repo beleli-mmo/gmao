@@ -51,30 +51,10 @@ export function TicketWorkflowBar({ ticket }: { ticket: TicketDetail }) {
 
   if (ticket.status === 'QUALIFIE' && can(['PARK_MANAGER', 'ADMIN'])) {
     actions.push(
-      <div key="p" className="wf-action">
-        <select value={form.assigneeKind ?? 'MECHANIC'} onChange={(e) => setForm({ ...form, assigneeKind: e.target.value })}>
-          <option value="MECHANIC">Technicien interne</option>
-          <option value="PROVIDER">Prestataire / sous-traitant</option>
-        </select>
-        <input
-          placeholder={form.assigneeKind === 'PROVIDER' ? 'providerId' : 'mechanicId'}
-          value={form.assigneeId ?? ''}
-          onChange={(e) => setForm({ ...form, assigneeId: e.target.value })}
-        />
-        <input type="datetime-local" value={form.scheduledFor ?? ''} onChange={(e) => setForm({ ...form, scheduledFor: e.target.value })} />
-        <button
-          onClick={run(() =>
-            endpoints.plan(ticket.id, {
-              assigneeKind: form.assigneeKind ?? 'MECHANIC',
-              mechanicId: (form.assigneeKind ?? 'MECHANIC') === 'MECHANIC' ? form.assigneeId : undefined,
-              providerId: form.assigneeKind === 'PROVIDER' ? form.assigneeId : undefined,
-              scheduledFor: new Date(form.scheduledFor).toISOString(),
-            }),
-          )}
-        >
-          Planifier →
-        </button>
-      </div>,
+      <p key="p" className="wf-wait">
+        OS qualifié — la planification (affectation + date) se fait dans la rubrique{' '}
+        <a href="/planning">Planning</a>.
+      </p>,
     );
   }
 
