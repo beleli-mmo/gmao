@@ -76,7 +76,7 @@ export default function TicketsPage() {
                 <td>{t.title}</td>
                 <td title={t.site.code}>{t.site.name}</td>
                 <td>{t.lot ? <span className="badge" style={{ background: `${t.lot.color}22`, color: t.lot.color }}>{t.lot.code}</span> : '—'}</td>
-                <td>{t.equipment?.assetTag ?? '—'}</td>
+                <td title={t.equipment?.assetTag ?? ''}>{t.equipment?.name ?? '—'}</td>
                 <td><UrgencyBadge urgency={t.urgency} /></td>
                 <td><TicketStatusBadge status={t.status} /></td>
                 <td className="muted">{datetime(t.createdAtField)}</td>
