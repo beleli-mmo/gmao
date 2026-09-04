@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { endpoints } from '@/lib/api';
 import { TicketStatusBadge, UrgencyBadge } from '@/components/StatusBadge';
+import { TicketWorkflowBar } from '@/components/TicketWorkflowBar';
 import { ExternalInvoiceForm } from '@/components/ExternalInvoiceForm';
 import { COST_KIND_LABEL, datetime, money, TICKET_STATUS_LABEL, TICKET_TYPE_LABEL } from '@/lib/format';
 
@@ -44,6 +45,11 @@ export default function TicketDetailPage() {
               </tbody>
             </table>
             {t.description && <p style={{ whiteSpace: 'pre-wrap', marginTop: 12 }}>{t.description}</p>}
+          </div>
+
+          <div className="card">
+            <h2>Suivi</h2>
+            <TicketWorkflowBar ticket={t} />
           </div>
 
           {t.attachments.length > 0 && (
