@@ -118,3 +118,27 @@ button { font: inherit; }
 .login { min-height: 100vh; display: grid; place-items: center; }
 .login form { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 28px; width: 340px; display: flex; flex-direction: column; gap: 12px; }
 .login input { padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--text); }
+
+/* ── étiquettes QR ── */
+.labels-sheet { display: grid; gap: 10px; margin-top: 12px; }
+.labels-S { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.labels-M { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.labels-L { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.label-card {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+  background: #fff; color: #10151c; break-inside: avoid;
+}
+.label-card svg { flex: none; height: auto; }
+.label-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.label-txt strong { font-size: 14px; line-height: 1.2; }
+.label-tag { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; color: #555; }
+.label-meta { font-size: 11px; color: #666; }
+
+@media print {
+  .sidebar, .no-print { display: none !important; }
+  .shell, .shell-main { display: block !important; padding: 0 !important; margin: 0 !important; }
+  .labels-sheet { gap: 6mm; }
+  .label-card { border: 1px solid #999; padding: 4mm; }
+  @page { margin: 12mm; }
+}

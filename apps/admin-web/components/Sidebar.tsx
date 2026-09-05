@@ -10,6 +10,7 @@ const NAV = [
   { href: '/chantiers', label: 'Projets & sites', icon: '🏢' },
   { href: '/lots', label: 'Lots techniques', icon: '🧩' },
   { href: '/parc', label: 'Actifs techniques', icon: '⚙️' },
+  { href: '/etiquettes', label: 'Étiquettes QR', icon: '🏷️' },
   { href: '/planning', label: 'Planning', icon: '📅' },
   { href: '/stocks', label: 'Stocks', icon: '📦' },
   { href: '/analytique', label: 'Analytique', icon: '📈' },

@@ -79,7 +79,7 @@ export interface TicketDetail extends TicketListItem {
 }
 
 export interface Equipment {
-  id: string; assetTag: string; name: string; kind: string;
+  id: string; assetTag: string; name: string; kind: string; qrPayload?: string | null;
   brand?: string; model?: string; status: EquipmentStatus;
   meterKind: 'HEURES' | 'KM' | 'NONE'; currentMeter: number;
   zone?: string | null; criticality?: string;

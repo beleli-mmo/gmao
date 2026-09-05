@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { QRCodeSVG } from 'qrcode.react';
 import { endpoints } from '@/lib/api';
 import { EquipmentStatusBadge, TicketStatusBadge, UrgencyBadge } from '@/components/StatusBadge';
 import { CRITICALITY_LABEL, TICKET_TYPE_LABEL, date, datetime, money } from '@/lib/format';
@@ -51,9 +52,16 @@ export default function CarnetDeSantePage() {
                 <tr><th>Marque / modèle</th><td>{[e.brand, e.model].filter(Boolean).join(' ') || '—'}</td></tr>
                 <tr><th>N° série</th><td>{e.serialNumber ?? '—'}</td></tr>
                 <tr><th>Acquisition</th><td>{e.acquisitionCost ? `${money(e.acquisitionCost)} · ${date(e.acquisitionDate ?? null)}` : '—'}</td></tr>
-                <tr><th>QR</th><td><code>GMAO:{e.assetTag}</code></td></tr>
+                <tr><th>QR</th><td><code>{e.qrPayload || `GMAO:${e.assetTag}`}</code></td></tr>
               </tbody>
             </table>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 12 }}>
+              <QRCodeSVG value={e.qrPayload || `GMAO:${e.assetTag}`} size={132} level="M" marginSize={2} />
+              <div>
+                <p className="muted" style={{ margin: 0, fontSize: 13 }}>À coller sur l’actif — scannable hors ligne par l’app terrain.</p>
+                <Link href="/etiquettes" className="btn btn-ghost" style={{ marginTop: 8, display: 'inline-block' }}>Planche d’étiquettes →</Link>
+              </div>
+            </div>
           </div>
 
           <div className="card">
