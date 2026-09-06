@@ -66,8 +66,8 @@ export const QualifyTicketBody = z.object({
 export const PlanTicketBody = z
   .object({
     assigneeKind: z.enum(['MECHANIC', 'PROVIDER']),
-    mechanicId: z.string().uuid().optional(),
-    providerId: z.string().uuid().optional(),
+    mechanicId: z.string().min(1).optional(),
+    providerId: z.string().min(1).optional(),
     scheduledFor: z.string().datetime(),
     expectedDeliveryAt: z.string().datetime().or(z.string().date()).optional(),
   })

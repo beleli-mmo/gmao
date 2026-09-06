@@ -61,8 +61,8 @@ const RescheduleBody = z
     scheduledFor: z.string().datetime().or(z.string().date()).optional(),
     expectedDeliveryAt: z.string().datetime().or(z.string().date()).nullish(),
     assigneeKind: z.enum(['MECHANIC', 'PROVIDER']).optional(),
-    mechanicId: z.string().uuid().nullish(),
-    providerId: z.string().uuid().nullish(),
+    mechanicId: z.string().min(1).nullish(),
+    providerId: z.string().min(1).nullish(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'aucune modification' });
 
