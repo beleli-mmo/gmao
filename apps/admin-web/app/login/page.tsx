@@ -28,7 +28,7 @@ export default function LoginPage() {
   return (
     <div className="login">
       <form onSubmit={onSubmit}>
-        <h1>GMAO BTP</h1>
+        <h1>Belel <span style={{ color: 'var(--primary)' }}>GMAO</span></h1>
         <p className="muted">Administration du parc & de la maintenance</p>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe" required />

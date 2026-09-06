@@ -3,7 +3,7 @@ import { QueryProvider } from '@/providers/QueryProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'GMAO BTP — Administration',
+  title: 'Belel GMAO — Administration',
   description: 'Gestion centralisée du parc, des tickets et de l’analytique des coûts',
 };
 

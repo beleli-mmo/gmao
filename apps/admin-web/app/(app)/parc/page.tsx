@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, endpoints, type EquipmentStatus } from '@/lib/api';
 import { EquipmentStatusBadge } from '@/components/StatusBadge';
 import { EQUIPMENT_STATUS_LABEL, CRITICALITY_LABEL } from '@/lib/format';
+import { matches } from '@/lib/search';
 
 const errMsg = (x: unknown) =>
   x instanceof ApiError && x.body && typeof x.body === 'object'
@@ -19,6 +20,7 @@ export default function ParcPage() {
   const qc = useQueryClient();
   const [status, setStatus] = useState('');
   const [lotFilter, setLotFilter] = useState('');
+  const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({
     lotId: '', siteId: '', zone: '', typeCode: '', seq: '', name: '', kind: 'EQUIPEMENT',
@@ -124,6 +126,7 @@ export default function ParcPage() {
       )}
 
       <div className="toolbar">
+        <input type="search" placeholder="Rechercher un actif (réf, désignation, zone…)" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260, flex: 1 }} />
         <select value={lotFilter} onChange={(e) => setLotFilter(e.target.value)}>
           <option value="">Tous les lots</option>
           {lots.data?.data.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -143,7 +146,7 @@ export default function ParcPage() {
           </thead>
           <tbody>
             {isLoading && <tr><td colSpan={9} className="muted">Chargement…</td></tr>}
-            {data?.data.map((e) => (
+            {data?.data.filter((e) => matches(q, e.assetTag, e.name, e.zone, e.lot?.name)).map((e) => (
               <tr key={e.id}>
                 <td><Link href={`/parc/${e.id}`}>{e.assetTag}</Link></td>
                 <td>{e.name}</td>

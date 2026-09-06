@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, endpoints, type SiteRow } from '@/lib/api';
+import { matches } from '@/lib/search';
 
 const errMsg = (e: unknown) =>
   e instanceof ApiError && e.body && typeof e.body === 'object'
@@ -16,6 +17,7 @@ export default function ChantiersPage() {
   const [f, setF] = useState({ code: '', name: '', address: '', startDate: '' });
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
 
+  const [q, setQ] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const [ef, setEf] = useState({ code: '', name: '', address: '' });
   const [rowErr, setRowErr] = useState<string | null>(null);
@@ -74,12 +76,16 @@ export default function ChantiersPage() {
 
       {rowErr && <p className="card" style={{ color: 'var(--tone-critical)', margin: '0 0 12px' }}>{rowErr}</p>}
 
+      <div className="toolbar">
+        <input type="search" placeholder="Rechercher un projet…" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260, flex: 1 }} />
+      </div>
+
       <div className="card" style={{ padding: 0 }}>
         <table>
           <thead><tr><th>Code</th><th>Nom</th><th>Adresse</th><th>DI</th><th>Actifs</th><th>État</th><th>Actions</th></tr></thead>
           <tbody>
             {isLoading && <tr><td colSpan={7} className="muted">Chargement…</td></tr>}
-            {data?.data.map((s) => (
+            {data?.data.filter((s) => matches(q, s.code, s.name, s.address)).map((s) => (
               editId === s.id ? (
                 <tr key={s.id}>
                   <td><input value={ef.code} onChange={(e) => setEf({ ...ef, code: e.target.value })} style={inp} /></td>

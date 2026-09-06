@@ -24,8 +24,8 @@ export default defineConfig({
       },
       includeAssets: ['icons/favicon.ico', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'GMAO Terrain',
-        short_name: 'GMAO',
+        name: 'Belel GMAO',
+        short_name: 'Belel GMAO',
         description: 'Demandes d’intervention terrain — maintenance & exploitation',
         lang: 'fr',
         start_url: '/',

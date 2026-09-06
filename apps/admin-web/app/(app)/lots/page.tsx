@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, endpoints, type LotRow } from '@/lib/api';
+import { matches } from '@/lib/search';
 
 const FREQ = ['Quotidien', 'Hebdomadaire', 'Mensuel', 'Trimestriel', 'Semestriel', 'Annuel', 'Quinquennal'];
 
@@ -15,6 +16,7 @@ export default function LotsPage() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['lots', 'all'], queryFn: () => endpoints.lotsList('?all=1') });
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
   const [f, setF] = useState({ code: '', name: '', defaultFrequency: 'Mensuel', isRegulatory: false, color: '#64748b' });
   const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
 
@@ -87,12 +89,16 @@ export default function LotsPage() {
 
       {rowErr && <p className="card" style={{ color: 'var(--tone-critical)', margin: '0 0 12px' }}>{rowErr}</p>}
 
+      <div className="toolbar">
+        <input type="search" placeholder="Rechercher un lot…" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260, flex: 1 }} />
+      </div>
+
       <div className="card" style={{ padding: 0 }}>
         <table>
           <thead><tr><th>Code</th><th>Lot technique</th><th>Fréquence type</th><th>Réglementaire</th><th>Actifs</th><th>DI</th><th>État</th><th>Actions</th></tr></thead>
           <tbody>
             {isLoading && <tr><td colSpan={8} className="muted">Chargement…</td></tr>}
-            {data?.data.map((l) => (
+            {data?.data.filter((l) => matches(q, l.code, l.name, l.defaultFrequency)).map((l) => (
               editId === l.id ? (
                 <tr key={l.id}>
                   <td><input value={ef.code} maxLength={8} onChange={(e) => setEf({ ...ef, code: e.target.value.toUpperCase() })} style={inp} /></td>

@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { UrgencyBadge } from '@/components/StatusBadge';
 import { date, datetime } from '@/lib/format';
+import { matches } from '@/lib/search';
 
 const toLocalInput = (d: Date) => {
   const p = (n: number) => String(n).padStart(2, '0');
@@ -26,6 +27,7 @@ export default function PlanningPage() {
   const qc = useQueryClient();
   const [mechFilter, setMechFilter] = useState('');
   const [horizon, setHorizon] = useState(14);
+  const [q, setQ] = useState('');
 
   const mechanics = useQuery({ queryKey: ['users', 'MECHANIC'], queryFn: () => endpoints.usersList('MECHANIC') });
   const providers = useQuery({ queryKey: ['providers'], queryFn: () => endpoints.providersList() });
@@ -74,16 +76,19 @@ export default function PlanningPage() {
     onSuccess: () => { invalidate(); setEditing(null); },
   });
 
+  const ivMatch = (iv: any) =>
+    matches(q, iv.ticket?.reference, iv.ticket?.title, iv.ticket?.site?.name, iv.ticket?.equipment?.name, iv.mechanic?.fullName, iv.provider?.name);
+
   const byDay = useMemo(() => {
     const map = new Map<string, any[]>();
     for (const iv of planned.data?.data ?? []) {
-      if (!iv.scheduledFor) continue;
+      if (!iv.scheduledFor || !ivMatch(iv)) continue;
       const k = new Date(iv.scheduledFor).toISOString().slice(0, 10);
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(iv);
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [planned.data]);
+  }, [planned.data, q]);
 
   const assignOptions = (kind: 'MECHANIC' | 'PROVIDER') =>
     kind === 'MECHANIC'
@@ -97,6 +102,7 @@ export default function PlanningPage() {
       </div>
 
       <div className="toolbar">
+        <input type="search" placeholder="Rechercher (réf, objet, projet, actif, intervenant…)" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260, flex: 1 }} />
         <select value={mechFilter} onChange={(e) => setMechFilter(e.target.value)}>
           <option value="">Tous les mécaniciens</option>
           {mechanics.data?.data.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
@@ -111,7 +117,7 @@ export default function PlanningPage() {
         <h2>À planifier — tickets qualifiés ({toPlan.data?.data.length ?? 0})</h2>
         {toPlan.isLoading && <p className="muted">Chargement…</p>}
         {toPlan.data && !toPlan.data.data.length && <p className="muted">Rien à planifier. 👍</p>}
-        {toPlan.data?.data.map((t) => {
+        {toPlan.data?.data.filter((t) => matches(q, t.reference, t.title, t.site?.name, t.equipment?.name)).map((t) => {
           const a = getPlan(t.id);
           const opts = assignOptions(a.kind);
           return (

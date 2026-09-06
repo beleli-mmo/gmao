@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { money } from '@/lib/format';
+import { matches } from '@/lib/search';
 
 export default function StocksPage() {
   const qc = useQueryClient();
   const [onlyLow, setOnlyLow] = useState(false);
+  const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [receiving, setReceiving] = useState<string | null>(null);
   const [f, setF] = useState({ sku: '', label: '', category: '', unitCost: '', reorderPoint: '', reorderQty: '', initialStock: '' });
@@ -68,6 +70,7 @@ export default function StocksPage() {
       )}
 
       <div className="toolbar">
+        <input type="search" placeholder="Rechercher une pièce (SKU, libellé, catégorie)…" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260, flex: 1 }} />
         <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input type="checkbox" checked={onlyLow} onChange={(e) => setOnlyLow(e.target.checked)} />
           Seulement sous le seuil de réappro
@@ -81,7 +84,7 @@ export default function StocksPage() {
           </thead>
           <tbody>
             {isLoading && <tr><td colSpan={8} className="muted">Chargement…</td></tr>}
-            {data?.data.map((p: any) => (
+            {data?.data.filter((p: any) => matches(q, p.sku, p.label, p.category)).map((p: any) => (
               <tr key={p.id}>
                 <td>{p.sku}</td>
                 <td>{p.label}</td>

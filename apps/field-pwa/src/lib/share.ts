@@ -69,7 +69,7 @@ export function buildDiMessage(d: DiShare): string {
   if (when) L.push(`🗓️ *Signalée le :* ${when}`);
   if (d.reporterName) L.push(`👤 *Demandeur :* ${d.reporterName}`);
   L.push(SEP);
-  L.push('_Émis via GMAO Terrain_');
+  L.push('_Émis via Belel GMAO_');
   return L.join('\n');
 }
 

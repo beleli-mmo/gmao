@@ -60,7 +60,7 @@ function Login({ onDone }: { onDone: (s: Session) => void }) {
 
   return (
     <main className="app-home">
-      <h1>GMAO Terrain</h1>
+      <h1>Belel GMAO</h1>
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <input className="app-cta" style={{ fontWeight: 400 }} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input className="app-cta" style={{ fontWeight: 400 }} type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} required />
@@ -146,7 +146,7 @@ function App() {
 
   return (
     <main className="app-home">
-      <h1>GMAO Terrain</h1>
+      <h1>Belel GMAO</h1>
       <p className="muted" style={{ marginTop: -8 }}>{session.fullName}</p>
       <button className="app-cta app-cta--primary" onClick={() => setScreen({ name: 'scan' })}>📷 Scanner un actif</button>
       <button className="app-cta" onClick={() => setScreen({ name: 'ticket' })}>✏️ Créer une demande</button>

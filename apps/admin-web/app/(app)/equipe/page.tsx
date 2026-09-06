@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { endpoints, type UserRow } from '@/lib/api';
 import { currentSession } from '@/lib/auth';
 import { ROLE_LABEL, ROLES, datetime } from '@/lib/format';
+import { matches } from '@/lib/search';
 
 function genPassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
@@ -24,6 +25,7 @@ export default function EquipePage() {
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const [resetFor, setResetFor] = useState<string | null>(null);
   const [newPwd, setNewPwd] = useState('');
+  const [q, setQ] = useState('');
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['users'] });
 
@@ -81,6 +83,10 @@ export default function EquipePage() {
       </form>
 
       {/* liste */}
+      <div className="toolbar">
+        <input type="search" placeholder="Rechercher un compte…" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260, flex: 1 }} />
+      </div>
+
       <div className="card" style={{ padding: 0 }}>
         <table>
           <thead>
@@ -88,7 +94,7 @@ export default function EquipePage() {
           </thead>
           <tbody>
             {isLoading && <tr><td colSpan={7} className="muted">Chargement…</td></tr>}
-            {data?.data.map((u: UserRow) => {
+            {data?.data.filter((u: UserRow) => matches(q, u.fullName, u.email, u.phone, u.role, ROLE_LABEL[u.role as keyof typeof ROLE_LABEL])).map((u: UserRow) => {
               const self = u.id === me?.id;
               return (
                 <tr key={u.id} style={{ opacity: u.active === false ? 0.5 : 1 }}>

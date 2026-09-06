@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, endpoints, type Provider } from '@/lib/api';
+import { matches } from '@/lib/search';
 
 const errMsg = (e: unknown) =>
   e instanceof ApiError && e.body && typeof e.body === 'object'
@@ -18,6 +19,7 @@ export default function PrestatairesPage() {
   const refresh = () => qc.invalidateQueries({ queryKey: ['providers'] });
 
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
   const [f, setF] = useState({ ...emptyForm });
   const [editId, setEditId] = useState<string | null>(null);
   const [ef, setEf] = useState({ ...emptyForm });
@@ -91,12 +93,16 @@ export default function PrestatairesPage() {
 
       {rowErr && <p className="card" style={{ color: 'var(--tone-critical)', margin: '0 0 12px' }}>{rowErr}</p>}
 
+      <div className="toolbar">
+        <input type="search" placeholder="Rechercher un prestataire…" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260, flex: 1 }} />
+      </div>
+
       <div className="card" style={{ padding: 0 }}>
         <table>
           <thead><tr><th>Nom</th><th>Contact</th><th>Spécialités</th><th>Interv.</th><th>Respect planning</th><th>Retard moy.</th><th>État</th><th>Actions</th></tr></thead>
           <tbody>
             {isLoading && <tr><td colSpan={8} className="muted">Chargement…</td></tr>}
-            {data?.data.map((p) => (
+            {data?.data.filter((p) => matches(q, p.name, p.contactName, p.phone, p.email, p.siret, (p.specialties ?? []).join(' '))).map((p) => (
               editId === p.id ? (
                 <tr key={p.id}>
                   <td colSpan={8}>

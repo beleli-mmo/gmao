@@ -25,7 +25,7 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">GMAO <span>BTP</span></div>
+      <div className="sidebar-brand">Belel <span>GMAO</span></div>
       <nav className="sidebar-nav">
         {NAV.map((n) => (
           <Link

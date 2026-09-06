@@ -6,11 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { endpoints, type TicketStatus } from '@/lib/api';
 import { TicketStatusBadge, UrgencyBadge } from '@/components/StatusBadge';
 import { datetime, TICKET_STATUS_LABEL, TICKET_STATUS_ORDER, TICKET_TYPE_LABEL, URGENCY_LABEL } from '@/lib/format';
+import { matches } from '@/lib/search';
 
 export default function TicketsPage() {
   const [status, setStatus] = useState<string>('');
   const [urgency, setUrgency] = useState<string>('');
   const [lotId, setLotId] = useState<string>('');
+  const [q, setQ] = useState('');
 
   const lots = useQuery({ queryKey: ['lots'], queryFn: () => endpoints.lotsList() });
 
@@ -28,7 +30,9 @@ export default function TicketsPage() {
   });
 
   const lotCode = lots.data?.data.find((l) => l.id === lotId)?.code;
-  const rows = (data?.data ?? []).filter((t) => !lotCode || t.lot?.code === lotCode);
+  const rows = (data?.data ?? [])
+    .filter((t) => !lotCode || t.lot?.code === lotCode)
+    .filter((t) => matches(q, t.reference, t.title, t.site?.name, t.equipment?.name, t.lot?.name));
 
   return (
     <>
@@ -39,11 +43,11 @@ export default function TicketsPage() {
             {isFetching ? 'Actualisation…' : dataUpdatedAt ? `à jour · ${new Date(dataUpdatedAt).toLocaleTimeString('fr-FR')}` : ''}
           </span>
           <button type="button" className="btn btn-ghost" onClick={() => refetch()} disabled={isFetching}>↻ Actualiser</button>
-          <Link href="/tickets/new" className="btn">+ Nouvelle DI</Link>
         </div>
       </div>
 
       <div className="toolbar">
+        <input type="search" placeholder="Rechercher (réf, objet, projet, actif…)" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260, flex: 1 }} />
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">Tous les statuts</option>
           {TICKET_STATUS_ORDER.concat('ANNULE').map((s) => (
