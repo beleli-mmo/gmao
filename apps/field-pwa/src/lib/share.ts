@@ -36,6 +36,8 @@ export interface DiShare {
   assetName?: string;
   createdAtField?: string;
   reporterName?: string;
+  /** photos jointes (disponibles juste après la prise) */
+  photos?: File[];
 }
 
 const SEP = '━━━━━━━━━━━━━━━━━━';
@@ -77,12 +79,30 @@ export function shareDiToWhatsApp(d: DiShare): void {
   window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer');
 }
 
-/** Feuille de partage native (permet WhatsApp + autres apps) avec repli WhatsApp. */
+/**
+ * Partage d'une DI.
+ *  - avec photos + Web Share niveau 2 : feuille de partage native → WhatsApp
+ *    reçoit le message ET les photos ensemble.
+ *  - sinon : lien WhatsApp texte seul (comme avant).
+ */
 export async function shareDi(d: DiShare): Promise<void> {
   const text = buildDiMessage(d);
-  if (typeof navigator !== 'undefined' && navigator.share) {
+  const title = `Demande d’intervention ${d.reference}`;
+  const files = (d.photos ?? []).filter(Boolean);
+  const nav = typeof navigator !== 'undefined' ? navigator : undefined;
+
+  if (files.length && nav?.canShare?.({ files })) {
     try {
-      await navigator.share({ title: `Demande d’intervention ${d.reference}`, text });
+      await nav.share({ files, text, title });
+      return;
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
+      // sinon on retombe sur le partage texte
+    }
+  }
+  if (!files.length && nav?.share) {
+    try {
+      await nav.share({ text, title });
       return;
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;

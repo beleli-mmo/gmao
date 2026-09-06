@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { submitFieldTicket, type NewTicketInput } from '../db/outbox';
 import { localRef, pullReference } from '../db/pouch';
 import { downscaleImage } from '../lib/image';
-import { shareDiToWhatsApp, type DiShare } from '../lib/share';
+import { shareDi, type DiShare } from '../lib/share';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import './ticket-form.css';
 
@@ -181,6 +181,9 @@ export function TicketCreateForm({ reporterId, reporterName, scannedQrPayload, p
     setSubmitting(false);
 
     if (res.ok) {
+      const sharePhotos = photos.map(
+        (p, i) => new File([p.blob], `photo-${i + 1}.jpg`, { type: p.blob.type || 'image/jpeg' }),
+      );
       photos.forEach((p) => URL.revokeObjectURL(p.url));
       if (voiceNote) URL.revokeObjectURL(voiceNote.url);
       setSent({
@@ -194,6 +197,7 @@ export function TicketCreateForm({ reporterId, reporterName, scannedQrPayload, p
         assetName: selectedEquipment?.name,
         createdAtField: new Date().toISOString(),
         reporterName,
+        photos: sharePhotos,
       });
     } else {
       setError(res.error ?? 'Échec de l’envoi');
@@ -208,11 +212,11 @@ export function TicketCreateForm({ reporterId, reporterName, scannedQrPayload, p
           <h2>Demande envoyée</h2>
           <p className="tf-sent-ref">{sent.reference}</p>
           <p className="tf-hint">Elle est arrivée au bureau. Vous pouvez la suivre dans « Mes demandes ».</p>
-          <button type="button" className="tf-btn tf-wa" onClick={() => shareDiToWhatsApp(sent)}>
+          <button type="button" className="tf-btn tf-wa" onClick={() => shareDi(sent)}>
             <svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true" fill="currentColor">
               <path d="M16 3C9 3 3.5 8.5 3.5 15.5c0 2.4.7 4.7 1.9 6.7L3 29l7-1.8c1.9 1 4 1.6 6 1.6 7 0 12.5-5.5 12.5-12.5S23 3 16 3zm0 22.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-4.2 1.1 1.1-4.1-.3-.4c-1-1.6-1.6-3.5-1.6-5.4C5.1 9.6 10 4.9 16 4.9c6 0 10.9 4.7 10.9 10.6S22 25.8 16 25.8zm6-7.9c-.3-.2-1.9-1-2.2-1.1-.3-.1-.5-.2-.8.2-.2.3-.9 1.1-1.1 1.3-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.3.4-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.8-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9 0 1.7 1.2 3.3 1.4 3.6.2.2 2.4 3.7 5.9 5.1.8.3 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.9-.8 2.2-1.6.3-.8.3-1.4.2-1.6-.1-.1-.3-.2-.6-.4z"/>
             </svg>
-            Partager sur WhatsApp
+            Partager sur WhatsApp{sent.photos?.length ? ` (+${sent.photos.length} photo${sent.photos.length > 1 ? 's' : ''})` : ''}
           </button>
           <button type="button" className="tf-btn tf-btn--primary" onClick={() => onCreated?.({ _id: '', clientId: '' })}>
             Terminé
