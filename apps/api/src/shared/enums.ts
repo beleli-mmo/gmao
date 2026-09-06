@@ -49,5 +49,6 @@ export const Role = {
   PARK_MANAGER: 'PARK_MANAGER',
   MECHANIC: 'MECHANIC',
   ADMIN: 'ADMIN',
+  DIRECTION: 'DIRECTION',
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];

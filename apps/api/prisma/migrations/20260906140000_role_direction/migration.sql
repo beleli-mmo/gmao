@@ -1,0 +1,2 @@
+-- Rôle DIRECTION (PDG) — consultation seule
+ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'DIRECTION';

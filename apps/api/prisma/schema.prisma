@@ -25,6 +25,7 @@ enum Role {
   PARK_MANAGER    // responsable parc & maintenance
   MECHANIC        // mécanicien interne
   ADMIN
+  DIRECTION       // direction / PDG — consultation seule
 }
 
 enum EquipmentKind {

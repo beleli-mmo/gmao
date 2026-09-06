@@ -47,8 +47,9 @@ export const ROLE_LABEL: Record<string, string> = {
   PARK_MANAGER: 'Responsable technique',
   MECHANIC: 'Technicien',
   ADMIN: 'Administrateur',
+  DIRECTION: 'Direction (PDG) — consultation',
 };
-export const ROLES = ['FIELD_MANAGER', 'PARK_MANAGER', 'MECHANIC', 'ADMIN'] as const;
+export const ROLES = ['FIELD_MANAGER', 'PARK_MANAGER', 'MECHANIC', 'ADMIN', 'DIRECTION'] as const;
 
 export const EQUIPMENT_STATUS_LABEL: Record<EquipmentStatus, string> = {
   EN_SERVICE: 'En service',

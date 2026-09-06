@@ -4,7 +4,7 @@ import { prisma } from '../prisma';
 import { requireAuth, requireRole } from '../auth/auth.middleware';
 
 export const analyticsRouter = Router();
-analyticsRouter.use(requireAuth, requireRole('PARK_MANAGER', 'ADMIN'));
+analyticsRouter.use(requireAuth, requireRole('PARK_MANAGER', 'ADMIN', 'DIRECTION'));
 
 /*
  * Implémentation portable (PostgreSQL & SQLite dev) : agrégation via l'API Prisma

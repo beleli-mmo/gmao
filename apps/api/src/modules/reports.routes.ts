@@ -4,7 +4,7 @@ import { prisma } from '../prisma';
 import { requireAuth, requireRole } from '../auth/auth.middleware';
 
 export const reportsRouter = Router();
-reportsRouter.use(requireAuth, requireRole('PARK_MANAGER', 'ADMIN'));
+reportsRouter.use(requireAuth, requireRole('PARK_MANAGER', 'ADMIN', 'DIRECTION'));
 
 const H = 3_600_000;
 const round = (n: number, d = 1) => Number(n.toFixed(d));

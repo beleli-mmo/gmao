@@ -8,7 +8,7 @@ import { planKpis, toHistoryRow, interventionHistoryInclude } from '../lib/inter
 export const usersRouter = Router();
 usersRouter.use(requireAuth);
 
-const ROLES = ['FIELD_MANAGER', 'PARK_MANAGER', 'MECHANIC', 'ADMIN'] as const;
+const ROLES = ['FIELD_MANAGER', 'PARK_MANAGER', 'MECHANIC', 'ADMIN', 'DIRECTION'] as const;
 const publicUser = { id: true, fullName: true, email: true, phone: true, role: true, active: true, createdAt: true } as const;
 
 /** Annuaire — alimente les listes déroulantes ET la page « Équipe & accès ». */
@@ -29,7 +29,7 @@ usersRouter.get('/', async (req, res, next) => {
 });
 
 /** GET /api/users/:id — fiche agent + historique de ses interventions + efficacité. */
-usersRouter.get('/:id', requireRole('PARK_MANAGER', 'ADMIN'), async (req, res, next) => {
+usersRouter.get('/:id', requireRole('PARK_MANAGER', 'ADMIN', 'DIRECTION'), async (req, res, next) => {
   try {
     const u = await prisma.user.findUnique({
       where: { id: req.params.id },
