@@ -110,6 +110,7 @@ export interface MyTicket {
   assetName?: string;
   lotCode?: string;
   lotName?: string;
+  photoCount?: number;
   fromServer: boolean;
 }
 
@@ -148,4 +149,22 @@ export async function listMyTickets(): Promise<MyTicket[]> {
   }
 
   return [...byRef.values()].sort((a, b) => (b.createdAtField || '').localeCompare(a.createdAtField || ''));
+}
+
+/** Récupère les photos d'une DI (proxy serveur) sous forme de fichiers, pour le partage. */
+export async function fetchTicketPhotos(reference: string): Promise<File[]> {
+  if (!navigator.onLine || !session) return [];
+  try {
+    const r = await fetch(`${API}/api/sync/tickets/${encodeURIComponent(reference)}/photos`, { headers: auth() });
+    if (!r.ok) return [];
+    const { photos } = await r.json();
+    return (photos ?? []).map((p: { name: string; mimeType: string; dataBase64: string }) => {
+      const bin = atob(p.dataBase64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new File([bytes], p.name, { type: p.mimeType || 'image/jpeg' });
+    });
+  } catch {
+    return [];
+  }
 }

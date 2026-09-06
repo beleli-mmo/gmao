@@ -5,7 +5,7 @@ import { prisma } from '../prisma';
 import { requireAuth, requireRole } from '../auth/auth.middleware';
 import { applyTransition } from '../sync/ticket-state-machine';
 import { nextTicketReference } from '../lib/reference';
-import { putObject } from '../lib/object-store';
+import { putObject, getObject } from '../lib/object-store';
 import { broadcast } from '../realtime';
 
 export const syncRouter = Router();
@@ -27,6 +27,7 @@ syncRouter.get('/my-tickets', async (req, res, next) => {
         site: { select: { code: true, name: true } },
         equipment: { select: { assetTag: true, name: true } },
         lot: { select: { code: true, name: true } },
+        _count: { select: { attachments: { where: { kind: 'PHOTO' } } } },
       },
     });
     res.json({
@@ -44,8 +45,39 @@ syncRouter.get('/my-tickets', async (req, res, next) => {
         assetName: t.equipment?.name ?? null,
         lotCode: t.lot?.code ?? null,
         lotName: t.lot?.name ?? null,
+        photoCount: t._count.attachments,
       })),
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * Photos d'une DI du technicien connecté, encodées en base64.
+ * Sert de proxy pour le partage WhatsApp depuis « Mes demandes »
+ * (le bucket objet n'expose pas de CORS).
+ * GET /api/sync/tickets/:reference/photos
+ */
+syncRouter.get('/tickets/:reference/photos', async (req, res, next) => {
+  try {
+    const t = await prisma.ticket.findFirst({
+      where: { reference: req.params.reference, reporterId: req.user!.id },
+      select: {
+        reference: true,
+        attachments: { where: { kind: 'PHOTO' }, select: { storageKey: true, mimeType: true }, orderBy: { createdAt: 'asc' } },
+      },
+    });
+    if (!t) return res.status(404).json({ error: 'introuvable' });
+
+    const photos: { name: string; mimeType: string; dataBase64: string }[] = [];
+    for (const [i, a] of t.attachments.entries()) {
+      const buf = await getObject(a.storageKey);
+      if (!buf) continue;
+      const ext = (a.mimeType.split('/')[1] || 'jpg').split(';')[0];
+      photos.push({ name: `${t.reference}-photo-${i + 1}.${ext}`, mimeType: a.mimeType, dataBase64: buf.toString('base64') });
+    }
+    res.json({ photos });
   } catch (e) {
     next(e);
   }

@@ -34,3 +34,18 @@ export async function signedGetUrl(key: string, expiresIn = 3600): Promise<strin
   if (!s3) return null;
   return getSignedUrl(s3, new GetObjectCommand({ Bucket: BUCKET, Key: key }), { expiresIn });
 }
+
+/** Récupère le contenu d'un objet (proxy : contourne l'absence de CORS sur le bucket). */
+export async function getObject(key: string): Promise<Buffer | null> {
+  if (!s3) return null;
+  try {
+    const out = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
+    const body = out.Body as any;
+    if (!body) return null;
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of body) chunks.push(chunk as Uint8Array);
+    return Buffer.concat(chunks as unknown as readonly Uint8Array[]);
+  } catch {
+    return null;
+  }
+}

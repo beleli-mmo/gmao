@@ -48,3 +48,5 @@
 @media (prefers-color-scheme: dark) {
   .mt-share { color: #4ee585; background: rgba(37, 211, 102, 0.14); }
 }
+
+.mt-share:disabled { opacity: 0.6; }
