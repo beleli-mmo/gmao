@@ -177,6 +177,9 @@ export const endpoints = {
   interventions: (qs = '') => api.get<{ data: any[] }>(`/api/interventions${qs}`),
   rescheduleIntervention: (id: string, body: unknown) => api.patch(`/api/interventions/${id}`, body),
 
+  report: (period: 'week' | 'month', date: string, siteId?: string) =>
+    api.get<ReportData>(`/api/reports?period=${period}&date=${date}${siteId ? `&siteId=${siteId}` : ''}`),
+
   providersList: (qs = '') => api.get<{ data: Provider[] }>(`/api/providers${qs}`),
   provider: (id: string) => api.get<ProviderDetail>(`/api/providers/${id}`),
   createProvider: (body: unknown) => api.post<Provider>('/api/providers', body),
@@ -208,6 +211,26 @@ export interface ProviderDetail extends Provider {
 export interface UserDetail extends UserRow {
   kpis: PlanKpis;
   history: ProviderInterventionRow[];
+}
+
+export interface Tally { key: string; count: number; color?: string; respected?: number; pct?: number }
+export interface Money { key: string; total: number; color?: string }
+export interface ReportData {
+  meta: { period: 'week' | 'month'; label: string; from: string; to: string; generatedAt: string; scope: string };
+  kpis: {
+    created: number; closed: number; closureRate: number | null; p1Created: number;
+    avgResolutionDays: number | null; backlogOpen: number; backlogOverdue: number;
+    oldestOpen: string | null; trppPct: number; costTotal: number;
+  };
+  breakdowns: { byStatus: Tally[]; byUrgency: Tally[]; byType: Tally[]; byLot: Tally[]; bySite: Tally[] };
+  closed: {
+    reference: string; title: string; type: string; urgency: string; siteName: string; lotName: string;
+    assetName: string; createdAtField: string; closedAt: string | null; resolutionDays: number | null; cost: number;
+  }[];
+  trpp: { total: number; respected: number; overdue: number; pct: number; byLot: Tally[] };
+  costs: { total: number; byKind: Money[]; byLot: Money[]; bySite: Money[] };
+  actors: { name: string; kind: string; count: number; hours: number; planRespectPct: number | null }[];
+  topAssets: { byCount: Tally[]; byCost: Money[] };
 }
 
 export interface Overview {

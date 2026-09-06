@@ -15,6 +15,7 @@ const NAV = [
   { href: '/prestataires', label: 'Prestataires', icon: '🤝' },
   { href: '/stocks', label: 'Stocks', icon: '📦' },
   { href: '/analytique', label: 'Analytique', icon: '📈' },
+  { href: '/rapports', label: 'Rapports', icon: '📄' },
   { href: '/equipe', label: 'Équipe & accès', icon: '👤' },
 ];
 
