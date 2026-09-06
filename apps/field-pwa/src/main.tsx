@@ -135,6 +135,7 @@ function App() {
         <h1 style={{ padding: '8px 16px 0', fontSize: 20 }}>Nouvelle demande d’intervention</h1>
         <TicketCreateForm
           reporterId={session.username}
+          reporterName={session.fullName}
           scannedQrPayload={screen.qrPayload}
           preselectedEquipmentId={screen.equipmentId}
           onCreated={() => setScreen({ name: 'home' })}

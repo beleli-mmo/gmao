@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { submitFieldTicket, type NewTicketInput } from '../db/outbox';
 import { localRef, pullReference } from '../db/pouch';
 import { downscaleImage } from '../lib/image';
+import { shareDiToWhatsApp, type DiShare } from '../lib/share';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import './ticket-form.css';
 
@@ -13,6 +14,8 @@ interface RefEquipment { id: string; _id: string; type: 'equipment'; assetTag: s
 
 interface Props {
   reporterId: string;
+  /** nom affiché du demandeur (pour le partage WhatsApp) */
+  reporterName?: string;
   /** pré-sélection si l'utilisateur a scanné un QR juste avant */
   scannedQrPayload?: string;
   /** id engin résolu par le scan (prioritaire sur le rapprochement par qrPayload) */
@@ -33,9 +36,9 @@ const URGENCY_LABEL: Record<Urgency, { txt: string; hint: string }> = {
   N3_MINEUR: { txt: 'N3 — Mineur', hint: 'À planifier' },
 };
 
-export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEquipmentId, onCreated }: Props) {
+export function TicketCreateForm({ reporterId, reporterName, scannedQrPayload, preselectedEquipmentId, onCreated }: Props) {
   const online = useOnlineStatus();
-  const [sent, setSent] = useState<{ reference: string } | null>(null);
+  const [sent, setSent] = useState<DiShare | null>(null);
 
   const [sites, setSites] = useState<RefSite[]>([]);
   const [equipments, setEquipments] = useState<RefEquipment[]>([]);
@@ -180,7 +183,18 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
     if (res.ok) {
       photos.forEach((p) => URL.revokeObjectURL(p.url));
       if (voiceNote) URL.revokeObjectURL(voiceNote.url);
-      setSent({ reference: res.reference! });
+      setSent({
+        reference: res.reference!,
+        title: title.trim(),
+        type: ticketType,
+        urgency,
+        status: 'EN_ATTENTE',
+        description: description.trim() || undefined,
+        siteName: sites.find((s) => s.id === siteId)?.name,
+        assetName: selectedEquipment?.name,
+        createdAtField: new Date().toISOString(),
+        reporterName,
+      });
     } else {
       setError(res.error ?? 'Échec de l’envoi');
     }
@@ -194,6 +208,12 @@ export function TicketCreateForm({ reporterId, scannedQrPayload, preselectedEqui
           <h2>Demande envoyée</h2>
           <p className="tf-sent-ref">{sent.reference}</p>
           <p className="tf-hint">Elle est arrivée au bureau. Vous pouvez la suivre dans « Mes demandes ».</p>
+          <button type="button" className="tf-btn tf-wa" onClick={() => shareDiToWhatsApp(sent)}>
+            <svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true" fill="currentColor">
+              <path d="M16 3C9 3 3.5 8.5 3.5 15.5c0 2.4.7 4.7 1.9 6.7L3 29l7-1.8c1.9 1 4 1.6 6 1.6 7 0 12.5-5.5 12.5-12.5S23 3 16 3zm0 22.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-4.2 1.1 1.1-4.1-.3-.4c-1-1.6-1.6-3.5-1.6-5.4C5.1 9.6 10 4.9 16 4.9c6 0 10.9 4.7 10.9 10.6S22 25.8 16 25.8zm6-7.9c-.3-.2-1.9-1-2.2-1.1-.3-.1-.5-.2-.8.2-.2.3-.9 1.1-1.1 1.3-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.3.4-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.8-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9 0 1.7 1.2 3.3 1.4 3.6.2.2 2.4 3.7 5.9 5.1.8.3 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.9-.8 2.2-1.6.3-.8.3-1.4.2-1.6-.1-.1-.3-.2-.6-.4z"/>
+            </svg>
+            Partager sur WhatsApp
+          </button>
           <button type="button" className="tf-btn tf-btn--primary" onClick={() => onCreated?.({ _id: '', clientId: '' })}>
             Terminé
           </button>

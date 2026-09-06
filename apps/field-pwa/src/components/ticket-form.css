@@ -138,3 +138,16 @@
 .tf-sent h2 { margin: 8px 0 0; font-size: 22px; }
 .tf-sent-ref { font-size: 18px; font-weight: 800; letter-spacing: 1px; margin: 0; color: #0b5d1e; }
 .tf-sent .tf-btn { width: 100%; }
+
+/* bouton partage WhatsApp (écran de confirmation) */
+.tf-wa {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #25d366;
+  color: #fff;
+  border-color: #25d366;
+}
+.tf-wa:active { background: #1da851; }
