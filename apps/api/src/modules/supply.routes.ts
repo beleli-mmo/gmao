@@ -153,22 +153,20 @@ supplyRouter.post('/:id/review', requireRole('PARK_MANAGER', 'ADMIN'), async (re
     const updated = await prisma.$transaction(async (tx) => {
       if (b.decision === 'VALIDER') {
         const po = await nextPurchaseOrderRef(tx);
-        const r = await tx.supplyRequest.update({
+        await tx.supplyRequest.update({
           where: { id: req.params.id },
           data: { status: 'VALIDEE', validatedById: req.user!.id, validatedAt: new Date(), reviewNote: b.note?.trim() || null, purchaseOrderRef: po, purchaseOrderAt: new Date() },
-          include: detailInclude,
         });
-        await tx.supplyEvent.create({ data: { requestId: r.id, type: 'VALIDEE', fromStatus: cur.status as any, toStatus: 'VALIDEE', actorId: req.user!.id, note: `Bon de commande ${po}` } });
-        return r;
+        await tx.supplyEvent.create({ data: { requestId: req.params.id, type: 'VALIDEE', fromStatus: cur.status as any, toStatus: 'VALIDEE', actorId: req.user!.id, note: `Bon de commande ${po}` } });
+        return tx.supplyRequest.findUniqueOrThrow({ where: { id: req.params.id }, include: detailInclude });
       }
       const to = b.decision === 'ANNULER' ? 'ANNULEE' : 'A_MODIFIER';
-      const r = await tx.supplyRequest.update({
+      await tx.supplyRequest.update({
         where: { id: req.params.id },
         data: { status: to, reviewNote: b.note?.trim() || null },
-        include: detailInclude,
       });
-      await tx.supplyEvent.create({ data: { requestId: r.id, type: b.decision === 'ANNULER' ? 'ANNULEE' : 'MODIF_DEMANDEE', fromStatus: cur.status as any, toStatus: to, actorId: req.user!.id, note: b.note?.trim() || null } });
-      return r;
+      await tx.supplyEvent.create({ data: { requestId: req.params.id, type: b.decision === 'ANNULER' ? 'ANNULEE' : 'MODIF_DEMANDEE', fromStatus: cur.status as any, toStatus: to, actorId: req.user!.id, note: b.note?.trim() || null } });
+      return tx.supplyRequest.findUniqueOrThrow({ where: { id: req.params.id }, include: detailInclude });
     });
     res.json(updated);
   } catch (e) {
@@ -184,9 +182,9 @@ supplyRouter.post('/:id/receive', requireRole('FIELD_MANAGER', 'ADMIN'), async (
     if (req.user!.role !== 'ADMIN' && cur.requesterId !== req.user!.id) return res.status(403).json({ error: 'forbidden' });
     if (cur.status !== 'VALIDEE') return res.status(409).json({ error: 'statut_invalide', message: 'La demande doit être validée avant réception.' });
     const r = await prisma.$transaction(async (tx) => {
-      const u = await tx.supplyRequest.update({ where: { id: req.params.id }, data: { status: 'RECUE', receivedById: req.user!.id, receivedAt: new Date() }, include: detailInclude });
-      await tx.supplyEvent.create({ data: { requestId: u.id, type: 'RECUE', fromStatus: 'VALIDEE', toStatus: 'RECUE', actorId: req.user!.id } });
-      return u;
+      await tx.supplyRequest.update({ where: { id: req.params.id }, data: { status: 'RECUE', receivedById: req.user!.id, receivedAt: new Date() } });
+      await tx.supplyEvent.create({ data: { requestId: req.params.id, type: 'RECUE', fromStatus: 'VALIDEE', toStatus: 'RECUE', actorId: req.user!.id } });
+      return tx.supplyRequest.findUniqueOrThrow({ where: { id: req.params.id }, include: detailInclude });
     });
     res.json(r);
   } catch (e) {
@@ -215,13 +213,12 @@ supplyRouter.post('/:id/control', requireRole('CONTROLEUR', 'PARK_MANAGER', 'ADM
 
     const r = await prisma.$transaction(async (tx) => {
       await tx.supplyAttachment.createMany({ data: uploaded.map((u) => ({ requestId: req.params.id, ...u })) });
-      const u = await tx.supplyRequest.update({
+      await tx.supplyRequest.update({
         where: { id: req.params.id },
         data: { status: 'CLOTUREE', controlledById: req.user!.id, controlledAt: new Date(), controlNote: b.note?.trim() || null },
-        include: detailInclude,
       });
-      await tx.supplyEvent.create({ data: { requestId: u.id, type: 'CONTROLEE', fromStatus: 'RECUE', toStatus: 'CLOTUREE', actorId: req.user!.id, note: b.note?.trim() || `${uploaded.length} photo(s) de contrôle` } });
-      return u;
+      await tx.supplyEvent.create({ data: { requestId: req.params.id, type: 'CONTROLEE', fromStatus: 'RECUE', toStatus: 'CLOTUREE', actorId: req.user!.id, note: b.note?.trim() || `${uploaded.length} photo(s) de contrôle` } });
+      return tx.supplyRequest.findUniqueOrThrow({ where: { id: req.params.id }, include: detailInclude });
     });
     res.json(r);
   } catch (e) {
