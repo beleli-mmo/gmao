@@ -12,12 +12,14 @@ const toLocalInput = (d: Date) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
-interface Assign { kind: 'MECHANIC' | 'PROVIDER'; who: string; when: string }
+interface Assign { kind: 'MECHANIC' | 'PROVIDER'; who: string; when: string; deliver: string }
 const emptyAssign = (): Assign => {
   const d = new Date();
   d.setHours(8, 0, 0, 0);
   d.setDate(d.getDate() + 1);
-  return { kind: 'MECHANIC', who: '', when: toLocalInput(d) };
+  const dv = new Date(d);
+  dv.setDate(dv.getDate() + 2);
+  return { kind: 'MECHANIC', who: '', when: toLocalInput(d), deliver: dv.toISOString().slice(0, 10) };
 };
 
 export default function PlanningPage() {
@@ -53,6 +55,7 @@ export default function PlanningPage() {
         mechanicId: a.kind === 'MECHANIC' ? a.who : undefined,
         providerId: a.kind === 'PROVIDER' ? a.who : undefined,
         scheduledFor: new Date(a.when).toISOString(),
+        expectedDeliveryAt: a.deliver || undefined,
       }),
     onSuccess: (_r, v) => { invalidate(); setPlans((p) => { const n = { ...p }; delete n[v.ticketId]; return n; }); },
   });
@@ -66,6 +69,7 @@ export default function PlanningPage() {
         mechanicId: a.kind === 'MECHANIC' ? a.who || undefined : undefined,
         providerId: a.kind === 'PROVIDER' ? a.who || undefined : undefined,
         scheduledFor: new Date(a.when).toISOString(),
+        expectedDeliveryAt: a.deliver || null,
       }),
     onSuccess: () => { invalidate(); setEditing(null); },
   });
@@ -125,7 +129,12 @@ export default function PlanningPage() {
                 <option value="">— {a.kind === 'MECHANIC' ? 'mécanicien' : 'prestataire'} —</option>
                 {opts.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
               </select>
-              <input type="datetime-local" value={a.when} onChange={(e) => setPlan(t.id, { when: e.target.value })} />
+              <label className="planrow-date"><span>Intervention</span>
+                <input type="datetime-local" value={a.when} onChange={(e) => setPlan(t.id, { when: e.target.value })} />
+              </label>
+              <label className="planrow-date"><span>Livraison prévue</span>
+                <input type="date" value={a.deliver} onChange={(e) => setPlan(t.id, { deliver: e.target.value })} />
+              </label>
               <button
                 className="btn"
                 disabled={!a.who || schedule.isPending}
@@ -147,7 +156,7 @@ export default function PlanningPage() {
         <div className="card" key={day}>
           <h2>{date(day)}</h2>
           <table>
-            <thead><tr><th>Heure</th><th>Ticket</th><th>Chantier / engin</th><th>Affecté à</th><th></th></tr></thead>
+            <thead><tr><th>Heure</th><th>Ticket</th><th>Chantier / engin</th><th>Affecté à</th><th>Livraison prévue</th><th></th></tr></thead>
             <tbody>
               {list.map((iv: any) => (
                 <tr key={iv.id}>
@@ -155,6 +164,7 @@ export default function PlanningPage() {
                   <td><Link href={`/tickets/${iv.ticket?.id ?? iv.ticketId}`}>{iv.ticket?.reference ?? '—'}</Link></td>
                   <td className="muted">{iv.ticket?.site?.name}{iv.ticket?.equipment?.name ? ` · ${iv.ticket.equipment.name}` : ''}</td>
                   <td>{iv.mechanic?.fullName ?? iv.provider?.name ?? iv.assigneeKind}</td>
+                  <td className="muted">{iv.expectedDeliveryAt ? date(iv.expectedDeliveryAt) : '—'}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     {editing === iv.id ? (
                       <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
@@ -167,6 +177,7 @@ export default function PlanningPage() {
                           {assignOptions(edit.kind).map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
                         </select>
                         <input type="datetime-local" value={edit.when} onChange={(e) => setEdit({ ...edit, when: e.target.value })} />
+                        <input type="date" title="Livraison prévue" value={edit.deliver} onChange={(e) => setEdit({ ...edit, deliver: e.target.value })} />
                         <button className="btn" disabled={reschedule.isPending} onClick={() => reschedule.mutate({ id: iv.id, a: edit })}>OK</button>
                         <button className="btn btn-ghost" onClick={() => setEditing(null)}>✕</button>
                       </span>
@@ -179,6 +190,7 @@ export default function PlanningPage() {
                             kind: iv.assigneeKind,
                             who: iv.mechanic?.id ?? iv.provider?.id ?? '',
                             when: toLocalInput(new Date(iv.scheduledFor)),
+                            deliver: iv.expectedDeliveryAt ? new Date(iv.expectedDeliveryAt).toISOString().slice(0, 10) : '',
                           });
                         }}
                       >
@@ -201,6 +213,8 @@ export default function PlanningPage() {
         }
         .planrow:last-child { border-bottom: 0; }
         .planrow-info { flex: 1 1 220px; min-width: 200px; }
+        .planrow-date { display: flex; flex-direction: column; gap: 3px; }
+        .planrow-date > span { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
         .planrow select, .planrow input {
           padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px;
           background: var(--surface); color: var(--text); font: inherit;

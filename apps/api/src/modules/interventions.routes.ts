@@ -59,6 +59,7 @@ interventionsRouter.get('/', async (req, res, next) => {
 const RescheduleBody = z
   .object({
     scheduledFor: z.string().datetime().or(z.string().date()).optional(),
+    expectedDeliveryAt: z.string().datetime().or(z.string().date()).nullish(),
     assigneeKind: z.enum(['MECHANIC', 'PROVIDER']).optional(),
     mechanicId: z.string().uuid().nullish(),
     providerId: z.string().uuid().nullish(),
@@ -75,6 +76,7 @@ interventionsRouter.patch('/:id', requireRole('PARK_MANAGER', 'ADMIN'), async (r
     const kind = b.assigneeKind ?? current.assigneeKind;
     const data: Record<string, unknown> = {};
     if (b.scheduledFor) data.scheduledFor = new Date(b.scheduledFor);
+    if (b.expectedDeliveryAt !== undefined) data.expectedDeliveryAt = b.expectedDeliveryAt ? new Date(b.expectedDeliveryAt) : null;
     if (b.assigneeKind || b.mechanicId !== undefined || b.providerId !== undefined) {
       data.assigneeKind = kind;
       data.mechanicId = kind === 'MECHANIC' ? (b.mechanicId ?? current.mechanicId) : null;

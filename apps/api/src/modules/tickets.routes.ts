@@ -238,6 +238,7 @@ ticketsRouter.post('/:id/plan', requireRole('PARK_MANAGER', 'ADMIN'), async (req
           mechanicId: body.assigneeKind === 'MECHANIC' ? body.mechanicId : null,
           providerId: body.assigneeKind === 'PROVIDER' ? body.providerId : null,
           scheduledFor: new Date(body.scheduledFor),
+          expectedDeliveryAt: body.expectedDeliveryAt ? new Date(body.expectedDeliveryAt) : null,
           laborRate: body.assigneeKind === 'MECHANIC' ? Number(process.env.DEFAULT_LABOR_RATE ?? 12000) : null,
         },
       });

@@ -12,6 +12,7 @@ const NAV = [
   { href: '/parc', label: 'Actifs techniques', icon: '⚙️' },
   { href: '/etiquettes', label: 'Étiquettes QR', icon: '🏷️' },
   { href: '/planning', label: 'Planning', icon: '📅' },
+  { href: '/prestataires', label: 'Prestataires', icon: '🤝' },
   { href: '/stocks', label: 'Stocks', icon: '📦' },
   { href: '/analytique', label: 'Analytique', icon: '📈' },
   { href: '/equipe', label: 'Équipe & accès', icon: '👤' },

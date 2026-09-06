@@ -379,10 +379,11 @@ model Intervention {
   assigneeKind  AssigneeKind
   mechanicId    String?
   providerId    String?
-  scheduledFor  DateTime?
+  scheduledFor      DateTime?
+  expectedDeliveryAt DateTime?   // date de livraison / fin prévue fixée au planning
   startedAt     DateTime?
   endedAt       DateTime?
-  laborHours    Float? 
+  laborHours    Float?
   laborRate     Float?    // taux horaire appliqué (snapshot)
   report        String?
   travelKm      Float? 

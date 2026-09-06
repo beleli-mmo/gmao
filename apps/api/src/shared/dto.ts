@@ -69,6 +69,7 @@ export const PlanTicketBody = z
     mechanicId: z.string().uuid().optional(),
     providerId: z.string().uuid().optional(),
     scheduledFor: z.string().datetime(),
+    expectedDeliveryAt: z.string().datetime().or(z.string().date()).optional(),
   })
   .refine((v) => (v.assigneeKind === 'MECHANIC' ? !!v.mechanicId : !!v.providerId), {
     message: 'mechanicId ou providerId requis selon assigneeKind',

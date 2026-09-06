@@ -292,6 +292,7 @@ model Intervention {
   mechanicId   String?
   providerId   String?
   scheduledFor DateTime?
+  expectedDeliveryAt DateTime?
   startedAt    DateTime?
   endedAt      DateTime?
   laborHours   Float?

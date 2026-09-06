@@ -176,8 +176,34 @@ export const endpoints = {
   interventions: (qs = '') => api.get<{ data: any[] }>(`/api/interventions${qs}`),
   rescheduleIntervention: (id: string, body: unknown) => api.patch(`/api/interventions/${id}`, body),
 
-  providersList: () => api.get<{ data: { id: string; name: string }[] }>('/api/providers'),
+  providersList: (qs = '') => api.get<{ data: Provider[] }>(`/api/providers${qs}`),
+  provider: (id: string) => api.get<ProviderDetail>(`/api/providers/${id}`),
+  createProvider: (body: unknown) => api.post<Provider>('/api/providers', body),
+  updateProvider: (id: string, body: unknown) => api.patch<Provider>(`/api/providers/${id}`, body),
+  deleteProvider: (id: string) => api.del(`/api/providers/${id}`),
 };
+
+export interface PlanKpis {
+  total: number; done: number; open: number; withTarget: number; onTime: number;
+  planRespectPct: number | null; avgDelayDays: number | null; totalHours: number;
+}
+export interface Provider {
+  id: string; name: string; contactName?: string | null; phone?: string | null;
+  email?: string | null; siret?: string | null; specialties: string[]; active: boolean;
+  _count?: { interventions: number; externalInvoices: number };
+  kpis?: PlanKpis;
+}
+export interface ProviderInterventionRow {
+  id: string; ticketId: string; reference: string | null; title: string | null;
+  ticketStatus: string | null; urgency: string | null; siteName: string | null; assetName: string | null;
+  scheduledFor: string | null; expectedDeliveryAt: string | null; startedAt: string | null; endedAt: string | null;
+  laborHours: number | null; travelKm: number | null; report: string | null;
+  onTime: boolean | null; delayDays: number | null;
+}
+export interface ProviderDetail extends Provider {
+  kpis: PlanKpis;
+  history: ProviderInterventionRow[];
+}
 
 export interface Overview {
   openTickets: number;
