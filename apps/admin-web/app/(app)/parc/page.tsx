@@ -3,9 +3,14 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { endpoints, type EquipmentStatus } from '@/lib/api';
+import { ApiError, endpoints, type EquipmentStatus } from '@/lib/api';
 import { EquipmentStatusBadge } from '@/components/StatusBadge';
 import { EQUIPMENT_STATUS_LABEL, CRITICALITY_LABEL } from '@/lib/format';
+
+const errMsg = (x: unknown) =>
+  x instanceof ApiError && x.body && typeof x.body === 'object'
+    ? ((x.body as any).message ?? (x.body as any).error ?? 'Erreur')
+    : (x as Error).message;
 
 const STATUSES: EquipmentStatus[] = ['EN_SERVICE', 'EN_PANNE', 'EN_MAINTENANCE', 'EN_TRANSIT', 'REFORME'];
 const KINDS = ['INSTALLATION', 'EQUIPEMENT', 'ORGANE', 'OUVRAGE'] as const;
@@ -36,6 +41,13 @@ export default function ParcPage() {
   const setStat = useMutation({
     mutationFn: ({ id, s }: { id: string; s: EquipmentStatus }) => endpoints.equipmentStatus(id, s),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['equipment'] }),
+  });
+
+  const [delErr, setDelErr] = useState<string | null>(null);
+  const del = useMutation({
+    mutationFn: (id: string) => endpoints.deleteEquipment(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['equipment'] }); setDelErr(null); },
+    onError: (x) => setDelErr(errMsg(x)),
   });
 
   const siteCode = sites.data?.data.find((s) => s.id === f.siteId)?.code ?? 'PROJ';
@@ -122,13 +134,15 @@ export default function ParcPage() {
         </select>
       </div>
 
+      {delErr && <p className="card" style={{ color: 'var(--tone-critical)', margin: '0 0 12px' }}>{delErr}</p>}
+
       <div className="card" style={{ padding: 0 }}>
         <table>
           <thead>
-            <tr><th>Référence</th><th>Désignation</th><th>Lot</th><th>Zone</th><th>Criticité</th><th>Compteur</th><th>Statut</th><th>Changer</th></tr>
+            <tr><th>Référence</th><th>Désignation</th><th>Lot</th><th>Zone</th><th>Criticité</th><th>Compteur</th><th>Statut</th><th>Changer</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            {isLoading && <tr><td colSpan={8} className="muted">Chargement…</td></tr>}
+            {isLoading && <tr><td colSpan={9} className="muted">Chargement…</td></tr>}
             {data?.data.map((e) => (
               <tr key={e.id}>
                 <td><Link href={`/parc/${e.id}`}>{e.assetTag}</Link></td>
@@ -142,6 +156,14 @@ export default function ParcPage() {
                   <select value={e.status} onChange={(ev) => setStat.mutate({ id: e.id, s: ev.target.value as EquipmentStatus })}>
                     {STATUSES.map((s) => <option key={s} value={s}>{EQUIPMENT_STATUS_LABEL[s]}</option>)}
                   </select>
+                </td>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <Link href={`/parc/${e.id}`} className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 12 }}>Modifier</Link>{' '}
+                  <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 12, color: 'var(--tone-critical)' }}
+                    disabled={del.isPending}
+                    onClick={() => { if (confirm(`Supprimer l’actif « ${e.name} » ?`)) del.mutate(e.id); }}>
+                    Supprimer
+                  </button>
                 </td>
               </tr>
             ))}

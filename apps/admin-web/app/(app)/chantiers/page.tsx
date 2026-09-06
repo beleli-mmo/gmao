@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { endpoints } from '@/lib/api';
+import { ApiError, endpoints, type SiteRow } from '@/lib/api';
+
+const errMsg = (e: unknown) =>
+  e instanceof ApiError && e.body && typeof e.body === 'object'
+    ? ((e.body as any).message ?? (e.body as any).error ?? 'Erreur')
+    : (e as Error).message;
 
 export default function ChantiersPage() {
   const qc = useQueryClient();
@@ -11,26 +16,45 @@ export default function ChantiersPage() {
   const [f, setF] = useState({ code: '', name: '', address: '', startDate: '' });
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
 
+  const [editId, setEditId] = useState<string | null>(null);
+  const [ef, setEf] = useState({ code: '', name: '', address: '' });
+  const [rowErr, setRowErr] = useState<string | null>(null);
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ['sites'] });
+
   const create = useMutation({
     mutationFn: () =>
       endpoints.createSite({
-        code: f.code.trim(),
-        name: f.name.trim(),
-        address: f.address || undefined,
-        startDate: f.startDate || undefined,
+        code: f.code.trim(), name: f.name.trim(),
+        address: f.address || undefined, startDate: f.startDate || undefined,
       }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sites'] });
-      setF({ code: '', name: '', address: '', startDate: '' });
-      setOpen(false);
-    },
+    onSuccess: () => { refresh(); setF({ code: '', name: '', address: '', startDate: '' }); setOpen(false); },
   });
+
+  const update = useMutation({
+    mutationFn: () => endpoints.updateSite(editId!, { code: ef.code.trim(), name: ef.name.trim(), address: ef.address.trim() || null }),
+    onSuccess: () => { refresh(); setEditId(null); setRowErr(null); },
+    onError: (e) => setRowErr(errMsg(e)),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: (s: SiteRow) => endpoints.updateSite(s.id, { active: !s.active }),
+    onSuccess: refresh,
+  });
+
+  const del = useMutation({
+    mutationFn: (id: string) => endpoints.deleteSite(id),
+    onSuccess: () => { refresh(); setRowErr(null); },
+    onError: (e) => setRowErr(errMsg(e)),
+  });
+
+  const startEdit = (s: SiteRow) => { setEditId(s.id); setEf({ code: s.code, name: s.name, address: s.address ?? '' }); setRowErr(null); };
 
   return (
     <>
       <div className="shell-head">
-        <h1>Chantiers</h1>
-        <button className="btn" onClick={() => setOpen((o) => !o)}>{open ? 'Fermer' : '+ Nouveau chantier'}</button>
+        <h1>Projets & sites</h1>
+        <button className="btn" onClick={() => setOpen((o) => !o)}>{open ? 'Fermer' : '+ Nouveau projet'}</button>
       </div>
 
       {open && (
@@ -44,24 +68,54 @@ export default function ChantiersPage() {
           <label className="fld"><span>Adresse</span><input value={f.address} onChange={(e) => set('address', e.target.value)} /></label>
           <label className="fld"><span>Début</span><input type="date" value={f.startDate} onChange={(e) => set('startDate', e.target.value)} /></label>
           <button className="btn" disabled={!f.code || !f.name || create.isPending}>{create.isPending ? '…' : 'Créer'}</button>
-          {create.isError && <p style={{ color: 'var(--tone-critical)', gridColumn: '1/-1', margin: 0 }}>{(create.error as Error).message}</p>}
+          {create.isError && <p style={{ color: 'var(--tone-critical)', gridColumn: '1/-1', margin: 0 }}>{errMsg(create.error)}</p>}
         </form>
       )}
 
+      {rowErr && <p className="card" style={{ color: 'var(--tone-critical)', margin: '0 0 12px' }}>{rowErr}</p>}
+
       <div className="card" style={{ padding: 0 }}>
         <table>
-          <thead><tr><th>Code</th><th>Nom</th><th>Adresse</th><th>Tickets</th><th>Engins affectés</th><th>État</th></tr></thead>
+          <thead><tr><th>Code</th><th>Nom</th><th>Adresse</th><th>DI</th><th>Actifs</th><th>État</th><th>Actions</th></tr></thead>
           <tbody>
-            {isLoading && <tr><td colSpan={6} className="muted">Chargement…</td></tr>}
+            {isLoading && <tr><td colSpan={7} className="muted">Chargement…</td></tr>}
             {data?.data.map((s) => (
-              <tr key={s.id}>
-                <td style={{ fontWeight: 700 }}>{s.code}</td>
-                <td>{s.name}</td>
-                <td className="muted">{s.address ?? '—'}</td>
-                <td>{s._count.tickets}</td>
-                <td>{s._count.assignments}</td>
-                <td>{s.active ? <span className="badge tone-good">Actif</span> : <span className="badge tone-muted">Clôturé</span>}</td>
-              </tr>
+              editId === s.id ? (
+                <tr key={s.id}>
+                  <td><input value={ef.code} onChange={(e) => setEf({ ...ef, code: e.target.value })} style={inp} /></td>
+                  <td><input value={ef.name} onChange={(e) => setEf({ ...ef, name: e.target.value })} style={inp} /></td>
+                  <td><input value={ef.address} onChange={(e) => setEf({ ...ef, address: e.target.value })} style={inp} /></td>
+                  <td>{s._count.tickets}</td>
+                  <td>{s._count.assignments}</td>
+                  <td>—</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <button className="btn" style={sm} disabled={update.isPending} onClick={() => update.mutate()}>Enregistrer</button>{' '}
+                    <button className="btn btn-ghost" style={sm} onClick={() => setEditId(null)}>Annuler</button>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={s.id}>
+                  <td style={{ fontWeight: 700 }}>{s.code}</td>
+                  <td>{s.name}</td>
+                  <td className="muted">{s.address ?? '—'}</td>
+                  <td>{s._count.tickets}</td>
+                  <td>{s._count.assignments}</td>
+                  <td>
+                    <button className="badge" style={{ cursor: 'pointer', border: 0 }} onClick={() => toggleActive.mutate(s)}
+                      title="Basculer actif / clôturé">
+                      {s.active ? <span className="tone-good">Actif</span> : <span className="tone-muted">Clôturé</span>}
+                    </button>
+                  </td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <button className="btn btn-ghost" style={sm} onClick={() => startEdit(s)}>Modifier</button>{' '}
+                    <button className="btn btn-ghost" style={{ ...sm, color: 'var(--tone-critical)' }}
+                      disabled={del.isPending}
+                      onClick={() => { if (confirm(`Supprimer le projet « ${s.name} » ?`)) del.mutate(s.id); }}>
+                      Supprimer
+                    </button>
+                  </td>
+                </tr>
+              )
             ))}
           </tbody>
         </table>
@@ -75,3 +129,6 @@ export default function ChantiersPage() {
     </>
   );
 }
+
+const inp: React.CSSProperties = { width: '100%', padding: '6px 8px', border: '1px solid var(--line)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)', font: 'inherit' };
+const sm: React.CSSProperties = { padding: '4px 10px', fontSize: 12 };

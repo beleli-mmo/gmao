@@ -35,6 +35,7 @@ export const api = {
   get: <T>(p: string) => request<T>(p),
   post: <T>(p: string, data?: unknown) => request<T>(p, { method: 'POST', body: JSON.stringify(data ?? {}) }),
   patch: <T>(p: string, data?: unknown) => request<T>(p, { method: 'PATCH', body: JSON.stringify(data ?? {}) }),
+  del: <T>(p: string) => request<T>(p, { method: 'DELETE' }),
 };
 
 // ── types de lecture (miroir partiel de Prisma) ──────────────────────
@@ -131,6 +132,8 @@ export const endpoints = {
   equipmentList: (qs = '') => api.get<{ data: Equipment[] }>(`/api/equipment${qs}`),
   equipment: (id: string) => api.get<EquipmentDetail>(`/api/equipment/${id}`),
   createEquipment: (body: unknown) => api.post('/api/equipment', body),
+  updateEquipment: (id: string, body: unknown) => api.patch(`/api/equipment/${id}`, body),
+  deleteEquipment: (id: string) => api.del(`/api/equipment/${id}`),
   equipmentStatus: (id: string, status: EquipmentStatus) => api.patch(`/api/equipment/${id}/status`, { status }),
 
   lotsList: () => api.get<{ data: LotRow[] }>('/api/lots'),
@@ -138,6 +141,8 @@ export const endpoints = {
 
   sitesList: (qs = '') => api.get<{ data: SiteRow[] }>(`/api/sites${qs}`),
   createSite: (body: unknown) => api.post('/api/sites', body),
+  updateSite: (id: string, body: unknown) => api.patch(`/api/sites/${id}`, body),
+  deleteSite: (id: string) => api.del(`/api/sites/${id}`),
 
   usersList: (role?: string) => api.get<{ data: UserRow[] }>(`/api/users${role ? `?role=${role}` : ''}`),
   usersAll: () => api.get<{ data: UserRow[] }>('/api/users?all=true'),

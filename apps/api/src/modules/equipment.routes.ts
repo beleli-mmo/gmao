@@ -120,6 +120,56 @@ equipmentRouter.post('/', requireRole('PARK_MANAGER', 'ADMIN'), async (req, res,
   }
 });
 
+// édition générale d'un actif
+equipmentRouter.patch('/:id', requireRole('PARK_MANAGER', 'ADMIN'), async (req, res, next) => {
+  try {
+    const body = z
+      .object({
+        name: z.string().min(2).optional(),
+        lotId: z.string().uuid().nullish(),
+        zone: z.string().nullish(),
+        criticality: z.enum(['CRITIQUE', 'IMPORTANT', 'STANDARD']).optional(),
+        meterKind: z.enum(['HEURES', 'KM', 'NONE']).optional(),
+        brand: z.string().nullish(),
+        model: z.string().nullish(),
+        serialNumber: z.string().nullish(),
+        acquisitionCost: z.number().nonnegative().nullish(),
+      })
+      .parse(req.body);
+    const eq = await prisma.equipment.update({ where: { id: req.params.id }, data: body });
+    res.json(eq);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// suppression d'un actif — refusée s'il a un historique (proposer le statut « Réformé »)
+equipmentRouter.delete('/:id', requireRole('PARK_MANAGER', 'ADMIN'), async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const cnt = await prisma.equipment.findUnique({
+      where: { id },
+      select: { _count: { select: { tickets: true, meterReadings: true, costLines: true } } },
+    });
+    if (!cnt) return res.status(404).json({ error: 'introuvable' });
+    const { tickets, meterReadings, costLines } = cnt._count;
+    if (tickets + meterReadings + costLines > 0) {
+      return res.status(409).json({
+        error: 'actif_utilise',
+        message: 'Cet actif a un historique (DI, relevés, coûts). Passez-le en « Réformé » plutôt que de le supprimer.',
+      });
+    }
+    await prisma.$transaction([
+      prisma.equipmentAssignment.deleteMany({ where: { equipmentId: id } }),
+      prisma.preventivePlan.deleteMany({ where: { equipmentId: id } }),
+      prisma.equipment.delete({ where: { id } }),
+    ]);
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
 equipmentRouter.patch('/:id/status', requireRole('PARK_MANAGER', 'ADMIN'), async (req, res, next) => {
   try {
     const { status } = z
