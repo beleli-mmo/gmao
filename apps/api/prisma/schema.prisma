@@ -139,6 +139,8 @@ model User {
   supplyReceived    SupplyRequest[] @relation("supplyReceiver")
   supplyControlled  SupplyRequest[] @relation("supplyController")
   supplyEvents      SupplyEvent[]   @relation("supplyEventActor")
+  vehicles          Vehicle[]       @relation("vehicleAssignee")
+  odometerReadings  OdometerReading[]
 
   @@index([role])
 }
@@ -158,6 +160,7 @@ model Site {
   tickets        Ticket[]
   costLines      CostLine[]
   supplyRequests SupplyRequest[]
+  vehicles       Vehicle[]
 
   @@index([active])
 }
@@ -623,4 +626,103 @@ model SupplyEvent {
   actor   User?         @relation("supplyEventActor", fields: [actorId], references: [id])
 
   @@index([requestId])
+}
+
+
+// ─────────────────────────────  PARC AUTOMOBILE  ─────────────────────────────
+
+model Vehicle {
+  id                String   @id @default(uuid())
+  reference         String   @unique               // VH-AAAA-NNN
+  plate             String   @unique               // immatriculation
+  brand             String?
+  model             String?
+  year              Int?
+  category          String?                          // Berline | Pick-up | Utilitaire | Camion | 4x4 | Moto
+  fuel              String?                          // Diesel | Essence | Hybride | Électrique
+  siteId            String?
+  currentKm         Float    @default(0)
+  serviceIntervalKm Float    @default(10000)         // périodicité de vidange
+  lastServiceKm     Float?
+  lastServiceAt     DateTime?
+  assignedName      String?                          // agent affecté — nom
+  assignedFunction  String?                          // agent affecté — fonction
+  assignedUserId    String?
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  site         Site? @relation(fields: [siteId], references: [id])
+  assignedUser User? @relation("vehicleAssignee", fields: [assignedUserId], references: [id])
+  insurances       VehicleInsurance[]
+  inspections      VehicleInspection[]
+  odometerReadings OdometerReading[]
+  services         VehicleService[]
+
+  @@index([active])
+}
+
+model VehicleInsurance {
+  id        String   @id @default(uuid())
+  vehicleId String
+  insurer   String
+  policyNo  String?
+  startDate DateTime?
+  endDate   DateTime                                 // échéance
+  premium   Float?
+  note      String?
+  createdAt DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([endDate])
+}
+
+model VehicleInspection {
+  id          String   @id @default(uuid())
+  vehicleId   String
+  performedAt DateTime
+  validUntil  DateTime                               // échéance de la visite technique
+  center      String?
+  result      String?                                // FAVORABLE | CONTRE_VISITE | DEFAVORABLE
+  cost        Float?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([validUntil])
+}
+
+model OdometerReading {
+  id           String   @id @default(uuid())
+  vehicleId    String
+  km           Float
+  readAt       DateTime @default(now())
+  recordedById String?
+  note         String?
+
+  vehicle    Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  recordedBy User?   @relation(fields: [recordedById], references: [id])
+
+  @@index([vehicleId, readAt])
+}
+
+model VehicleService {
+  id          String   @id @default(uuid())
+  vehicleId   String
+  kind        String   @default("VIDANGE")           // VIDANGE | REVISION | PNEUS | FREINS | AUTRE
+  performedAt DateTime
+  km          Float
+  nextDueKm   Float?
+  garage      String?
+  cost        Float?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
 }

@@ -92,3 +92,13 @@ export const SUPPLY_STATUS_LABEL: Record<string, string> = {
 export const SUPPLY_STATUS_TONE: Record<string, string> = {
   DEMANDEE: 'info', A_MODIFIER: 'warning', VALIDEE: 'good', RECUE: 'good', CLOTUREE: 'good', ANNULEE: 'critical',
 };
+
+/** Badge d'échéance à partir d'un nombre de jours restants. */
+export function echeance(daysLeft: number | null | undefined): { tone: string; text: string } {
+  if (daysLeft == null) return { tone: 'muted', text: '—' };
+  if (daysLeft < 0) return { tone: 'critical', text: `expiré (${-daysLeft} j)` };
+  if (daysLeft === 0) return { tone: 'critical', text: "aujourd'hui" };
+  if (daysLeft <= 15) return { tone: 'critical', text: `${daysLeft} j` };
+  if (daysLeft <= 30) return { tone: 'warning', text: `${daysLeft} j` };
+  return { tone: 'good', text: `${daysLeft} j` };
+}

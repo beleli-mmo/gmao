@@ -11,6 +11,7 @@ const NAV = [
   { href: '/chantiers', label: 'Projets & sites', icon: '🏢' },
   { href: '/lots', label: 'Lots techniques', icon: '🧩' },
   { href: '/parc', label: 'Actifs techniques', icon: '⚙️' },
+  { href: '/vehicules', label: 'Véhicules', icon: '🚗' },
   { href: '/etiquettes', label: 'Étiquettes QR', icon: '🏷️' },
   { href: '/planning', label: 'Planning', icon: '📅' },
   { href: '/prestataires', label: 'Prestataires', icon: '🤝' },

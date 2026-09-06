@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { KpiCard } from '@/components/KpiCard';
 import { TicketStatusBadge } from '@/components/StatusBadge';
-import { money, datetime, TICKET_STATUS_ORDER } from '@/lib/format';
+import { money, datetime, date, echeance, TICKET_STATUS_ORDER } from '@/lib/format';
 
 export default function DashboardPage() {
   const overview = useQuery({ queryKey: ['overview'], queryFn: endpoints.overview });
@@ -13,8 +13,10 @@ export default function DashboardPage() {
     queryKey: ['tickets', 'blocking'],
     queryFn: () => endpoints.ticketsList('?urgency=N1_BLOQUANT&status=EN_ATTENTE,QUALIFIE,PLANIFIE,EN_COURS&take=8'),
   });
+  const veh = useQuery({ queryKey: ['vehicleAlerts'], queryFn: () => endpoints.vehicleAlerts(), refetchInterval: 60_000 });
 
   const o = overview.data;
+  const va = veh.data;
 
   return (
     <>
@@ -47,7 +49,66 @@ export default function DashboardPage() {
           tone={o && o.partsBelowReorder > 0 ? 'warning' : 'good'}
         />
         <KpiCard label="Coût maintenance (mois)" value={o ? money(o.monthMaintenanceCost) : '—'} />
+        <KpiCard
+          label="Assurances à échéance (≤ 30 j)"
+          value={va?.insuranceCount ?? '—'}
+          tone={va && va.insuranceCount > 0 ? 'critical' : 'good'}
+        />
+        <KpiCard
+          label="Visites techniques (≤ 15 j)"
+          value={va?.inspectionCount ?? '—'}
+          tone={va && va.inspectionCount > 0 ? 'critical' : 'good'}
+        />
       </div>
+
+      {va && (va.insurance.length > 0 || va.inspection.length > 0) && (
+        <div className="grid grid-2" style={{ marginBottom: 20 }}>
+          <div className="card">
+            <h2>Assurances à renouveler (≤ 30 jours)</h2>
+            {va.insurance.length ? (
+              <table>
+                <thead><tr><th>Véhicule</th><th>Agent</th><th>Assureur</th><th>Échéance</th><th>Reste</th></tr></thead>
+                <tbody>
+                  {va.insurance.map((a) => {
+                    const e = echeance(a.daysLeft);
+                    return (
+                      <tr key={a.id}>
+                        <td><Link href={`/vehicules/${a.id}`}>{a.plate}</Link> <span className="muted">{a.label}</span></td>
+                        <td className="muted">{a.assignedName ?? '—'}</td>
+                        <td className="muted">{a.insurer ?? '—'}</td>
+                        <td className="muted">{date(a.endDate ?? null)}</td>
+                        <td><span className={`badge tone-${e.tone}`}>{e.text}</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : <p className="muted">Aucune assurance à échéance. 👍</p>}
+          </div>
+
+          <div className="card">
+            <h2>Visites techniques à renouveler (≤ 15 jours)</h2>
+            {va.inspection.length ? (
+              <table>
+                <thead><tr><th>Véhicule</th><th>Agent</th><th>Valide jusqu’au</th><th>Reste</th></tr></thead>
+                <tbody>
+                  {va.inspection.map((a) => {
+                    const e = echeance(a.daysLeft);
+                    return (
+                      <tr key={a.id}>
+                        <td><Link href={`/vehicules/${a.id}`}>{a.plate}</Link> <span className="muted">{a.label}</span></td>
+                        <td className="muted">{a.assignedName ?? '—'}</td>
+                        <td className="muted">{date(a.validUntil ?? null)}</td>
+                        <td><span className={`badge tone-${e.tone}`}>{e.text}</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : <p className="muted">Aucune visite technique à échéance. 👍</p>}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-2">
         <div className="card">

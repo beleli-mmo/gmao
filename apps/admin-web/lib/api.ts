@@ -180,6 +180,16 @@ export const endpoints = {
   report: (period: 'week' | 'month', date: string, siteId?: string) =>
     api.get<ReportData>(`/api/reports?period=${period}&date=${date}${siteId ? `&siteId=${siteId}` : ''}`),
 
+  vehiclesList: () => api.get<{ data: VehicleRow[] }>('/api/vehicles'),
+  vehicle: (id: string) => api.get<VehicleDetail>(`/api/vehicles/${id}`),
+  vehicleAlerts: () => api.get<VehicleAlerts>('/api/vehicles/alerts'),
+  createVehicle: (body: unknown) => api.post<VehicleRow>('/api/vehicles', body),
+  updateVehicle: (id: string, body: unknown) => api.patch<VehicleRow>(`/api/vehicles/${id}`, body),
+  deleteVehicle: (id: string) => api.del(`/api/vehicles/${id}`),
+  addVehicleRecord: (id: string, kind: 'insurance' | 'inspection' | 'odometer' | 'service', body: unknown) =>
+    api.post(`/api/vehicles/${id}/${kind}`, body),
+  deleteVehicleRecord: (kind: string, rid: string) => api.del(`/api/vehicles/record/${kind}/${rid}`),
+
   supplyList: (qs = '') => api.get<{ data: SupplyRow[] }>(`/api/supply${qs}`),
   supply: (id: string) => api.get<SupplyDetail>(`/api/supply/${id}`),
   createSupply: (body: unknown) => api.post<SupplyDetail>('/api/supply', body),
@@ -278,3 +288,31 @@ export interface Overview {
   trppOverdue: number;
   trppTarget: number;
 }
+
+export interface VehicleSummary {
+  insuranceEndDate: string | null; insuranceDaysLeft: number | null; insurer: string | null;
+  inspectionValidUntil: string | null; inspectionDaysLeft: number | null;
+  nextServiceKm: number | null; kmToService: number | null;
+}
+export interface VehicleRow extends VehicleSummary {
+  id: string; reference: string; plate: string; brand: string | null; model: string | null;
+  year: number | null; category: string | null; fuel: string | null; active: boolean;
+  currentKm: number; serviceIntervalKm: number;
+  assignedName: string | null; assignedFunction: string | null;
+  site: { name: string } | null;
+}
+export interface VehicleInsuranceRow { id: string; insurer: string; policyNo: string | null; startDate: string | null; endDate: string; premium: number | null; note: string | null }
+export interface VehicleInspectionRow { id: string; performedAt: string; validUntil: string; center: string | null; result: string | null; cost: number | null; note: string | null }
+export interface OdometerRow { id: string; km: number; readAt: string; note: string | null; recordedBy: { fullName: string } | null }
+export interface VehicleServiceRow { id: string; kind: string; performedAt: string; km: number; nextDueKm: number | null; garage: string | null; cost: number | null; note: string | null }
+export interface VehicleDetail extends VehicleRow {
+  site: { id: string; name: string } | null;
+  assignedUser: { fullName: string } | null;
+  lastServiceKm: number | null; lastServiceAt: string | null;
+  insurances: VehicleInsuranceRow[];
+  inspections: VehicleInspectionRow[];
+  odometerReadings: OdometerRow[];
+  services: VehicleServiceRow[];
+}
+export interface VehicleAlertItem { id: string; plate: string; label: string; assignedName: string | null; daysLeft: number; endDate?: string; validUntil?: string; insurer?: string }
+export interface VehicleAlerts { insurance: VehicleAlertItem[]; inspection: VehicleAlertItem[]; insuranceCount: number; inspectionCount: number }

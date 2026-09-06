@@ -53,6 +53,8 @@ model User {
   supplyReceived   SupplyRequest[]  @relation("supplyReceiver")
   supplyControlled SupplyRequest[]  @relation("supplyController")
   supplyEvents     SupplyEvent[]    @relation("supplyEventActor")
+  vehicles         Vehicle[]        @relation("vehicleAssignee")
+  odometerReadings OdometerReading[]
 
   @@index([role])
 }
@@ -72,6 +74,7 @@ model Site {
   tickets     Ticket[]
   costLines   CostLine[]
   supplyRequests SupplyRequest[]
+  vehicles       Vehicle[]
 
   @@index([active])
 }
@@ -510,4 +513,93 @@ model SupplyEvent {
   request SupplyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   actor   User? @relation("supplyEventActor", fields: [actorId], references: [id])
   @@index([requestId])
+}
+
+
+model Vehicle {
+  id                String    @id @default(uuid())
+  reference         String    @unique
+  plate             String    @unique
+  brand             String?
+  model             String?
+  year              Int?
+  category          String?
+  fuel              String?
+  siteId            String?
+  currentKm         Float     @default(0)
+  serviceIntervalKm Float     @default(10000)
+  lastServiceKm     Float?
+  lastServiceAt     DateTime?
+  assignedName      String?
+  assignedFunction  String?
+  assignedUserId    String?
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  site         Site? @relation(fields: [siteId], references: [id])
+  assignedUser User? @relation("vehicleAssignee", fields: [assignedUserId], references: [id])
+  insurances       VehicleInsurance[]
+  inspections      VehicleInspection[]
+  odometerReadings OdometerReading[]
+  services         VehicleService[]
+
+  @@index([active])
+}
+
+model VehicleInsurance {
+  id        String    @id @default(uuid())
+  vehicleId String
+  insurer   String
+  policyNo  String?
+  startDate DateTime?
+  endDate   DateTime
+  premium   Float?
+  note      String?
+  createdAt DateTime  @default(now())
+  vehicle   Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  @@index([vehicleId])
+  @@index([endDate])
+}
+
+model VehicleInspection {
+  id          String   @id @default(uuid())
+  vehicleId   String
+  performedAt DateTime
+  validUntil  DateTime
+  center      String?
+  result      String?
+  cost        Float?
+  note        String?
+  createdAt   DateTime @default(now())
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  @@index([vehicleId])
+  @@index([validUntil])
+}
+
+model OdometerReading {
+  id           String   @id @default(uuid())
+  vehicleId    String
+  km           Float
+  readAt       DateTime @default(now())
+  recordedById String?
+  note         String?
+  vehicle      Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  recordedBy   User?    @relation(fields: [recordedById], references: [id])
+  @@index([vehicleId, readAt])
+}
+
+model VehicleService {
+  id          String   @id @default(uuid())
+  vehicleId   String
+  kind        String   @default("VIDANGE")
+  performedAt DateTime
+  km          Float
+  nextDueKm   Float?
+  garage      String?
+  cost        Float?
+  note        String?
+  createdAt   DateTime @default(now())
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  @@index([vehicleId])
 }
