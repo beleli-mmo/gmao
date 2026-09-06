@@ -61,3 +61,27 @@
 @media (prefers-color-scheme: dark) {
   .sp-item, .sp-refresh, .sp-photo-btn, .sp-note textarea { background: #1b222b; border-color: #2b3540; }
 }
+
+.sp-new {
+  border: 0; border-radius: 9px; background: #0b5d1e; color: #fff;
+  padding: 7px 12px; font-size: 13px; font-weight: 800;
+}
+.sp-form .app-back { margin: 12px 0 0 12px; }
+.sp-note select, .sp-note input { border: 1px solid #b7c0cc; border-radius: 10px; padding: 10px; font: inherit; }
+.sp-line { display: grid; grid-template-columns: 1fr 70px 62px 30px; gap: 6px; margin: 6px 0; }
+.sp-line input { border: 1px solid #b7c0cc; border-radius: 8px; padding: 8px; font: inherit; }
+.sp-line button { border: 1px solid #d7dcda; border-radius: 8px; background: #fff; font-weight: 800; }
+.sp-line button:disabled { opacity: .4; }
+.sp-addline { margin-top: 4px; border: 1px dashed #b7c0cc; background: transparent; border-radius: 9px; padding: 6px 12px; font-size: 13px; font-weight: 700; color: #0b5d1e; }
+.sp-check { width: 60px; height: 60px; border-radius: 999px; background: #0b5d1e; color: #fff; font-size: 34px; display: grid; place-items: center; margin: 8px auto 0; }
+.sp-ref { font-size: 18px; font-weight: 800; letter-spacing: 1px; margin: 0; color: #0b5d1e; }
+.sp-wa {
+  width: 100%; min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  border: 0; border-radius: 12px; background: #25d366; color: #fff; font-size: 16px; font-weight: 800;
+}
+@media (prefers-color-scheme: dark) {
+  .sp-line input, .sp-note select, .sp-note input { background: #1b222b; border-color: #2b3540; }
+}
+
+.sp-review { margin: 8px 0 0; padding: 8px 10px; background: #fbf0dd; border-radius: 8px; font-size: 12.5px; color: #8a5a0f; }
+@media (prefers-color-scheme: dark) { .sp-review { background: #3a2f18; color: #e6c96b; } }

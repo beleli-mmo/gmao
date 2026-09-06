@@ -19,15 +19,11 @@ const NAV = [
   { href: '/rapports', label: 'Rapports', icon: '📄' },
   { href: '/equipe', label: 'Équipe & accès', icon: '👤' },
 ];
-// Le chef de chantier et le contrôleur n'accèdent qu'à l'approvisionnement.
-const RESTRICTED = ['FIELD_MANAGER', 'CONTROLEUR'];
 
 export function Sidebar() {
   const pathname = usePathname();
   const session = currentSession();
-  const nav = session && RESTRICTED.includes(session.role)
-    ? NAV.filter((n) => n.href === '/approvisionnement')
-    : NAV;
+  const nav = NAV;
 
   return (
     <aside className="sidebar">

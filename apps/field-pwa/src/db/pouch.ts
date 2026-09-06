@@ -177,6 +177,8 @@ export interface SupplyRow {
   status: 'DEMANDEE' | 'A_MODIFIER' | 'VALIDEE' | 'RECUE' | 'CLOTUREE' | 'ANNULEE';
   title: string;
   createdAt: string;
+  needBy?: string | null;
+  reviewNote?: string | null;
   purchaseOrderRef: string | null;
   site?: { name: string };
   requester?: { fullName: string };
@@ -185,8 +187,77 @@ export interface SupplyRow {
 export interface SupplyDetail extends SupplyRow {
   note: string | null;
   needBy: string | null;
+  site?: { id: string; name: string };
   items: { id: string; label: string; quantity: number; unit: string }[];
   events: { id: string; toStatus: string; note: string | null; createdAt: string; actor: { fullName: string } | null }[];
+}
+
+export interface RefSite { id: string; code: string; name: string }
+/** Chantiers en cache (référentiel) pour le formulaire d'approvisionnement. */
+export async function listRefSites(): Promise<RefSite[]> {
+  try {
+    const res = await localRef.allDocs({ include_docs: true });
+    return res.rows
+      .map((r) => r.doc as any)
+      .filter((d) => d && d.type === 'site')
+      .map((d) => ({ id: d.id, code: d.code, name: d.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [];
+  }
+}
+
+export interface SupplyCreateInput {
+  siteId: string;
+  title: string;
+  note?: string;
+  needBy?: string;
+  items: { label: string; quantity: number; unit: string }[];
+}
+export async function createSupply(input: SupplyCreateInput): Promise<{ ok: boolean; data?: SupplyDetail; error?: string }> {
+  if (!navigator.onLine) return { ok: false, error: 'Pas de connexion Internet' };
+  try {
+    const r = await fetch(`${API}/api/supply`, { method: 'POST', headers: auth(), body: JSON.stringify(input) });
+    if (r.status === 401) { authExpired(); return { ok: false, error: 'Session expirée — reconnectez-vous' }; }
+    if (r.status === 403) return { ok: false, error: "Votre compte n'a pas le droit de créer une demande d'approvisionnement." };
+    if (!r.ok) {
+      const b = await r.json().catch(() => null);
+      return { ok: false, error: b?.message ?? b?.error ?? `Le serveur a refusé (${r.status})` };
+    }
+    return { ok: true, data: await r.json() };
+  } catch {
+    return { ok: false, error: 'Échec réseau — réessayez' };
+  }
+}
+
+export async function updateSupply(id: string, input: SupplyCreateInput): Promise<{ ok: boolean; data?: SupplyDetail; error?: string }> {
+  if (!navigator.onLine) return { ok: false, error: 'Pas de connexion Internet' };
+  try {
+    const r = await fetch(`${API}/api/supply/${id}`, { method: 'PATCH', headers: auth(), body: JSON.stringify(input) });
+    if (r.status === 401) { authExpired(); return { ok: false, error: 'Session expirée' }; }
+    if (!r.ok) {
+      const b = await r.json().catch(() => null);
+      return { ok: false, error: b?.message ?? `Le serveur a refusé (${r.status})` };
+    }
+    return { ok: true, data: await r.json() };
+  } catch {
+    return { ok: false, error: 'Échec réseau — réessayez' };
+  }
+}
+
+export async function confirmSupplyReception(id: string): Promise<{ ok: boolean; error?: string }> {
+  if (!navigator.onLine) return { ok: false, error: 'Pas de connexion Internet' };
+  try {
+    const r = await fetch(`${API}/api/supply/${id}/receive`, { method: 'POST', headers: auth() });
+    if (r.status === 401) { authExpired(); return { ok: false, error: 'Session expirée' }; }
+    if (!r.ok) {
+      const b = await r.json().catch(() => null);
+      return { ok: false, error: b?.message ?? `Le serveur a refusé (${r.status})` };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Échec réseau — réessayez' };
+  }
 }
 
 export async function listSupply(): Promise<SupplyRow[]> {

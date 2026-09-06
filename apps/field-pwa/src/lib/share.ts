@@ -110,3 +110,34 @@ export async function shareDi(d: DiShare): Promise<void> {
   }
   shareDiToWhatsApp(d);
 }
+
+// ── partage d'une demande d'approvisionnement ─────────────────────────
+export interface SupplyShare {
+  reference: string;
+  title: string;
+  siteName?: string;
+  needBy?: string | null;
+  note?: string;
+  items: { label: string; quantity: number; unit: string }[];
+}
+
+export function buildSupplyMessage(s: SupplyShare): string {
+  const L: string[] = [];
+  L.push('🧾 *DEMANDE D’APPROVISIONNEMENT*');
+  L.push(SEP);
+  L.push(`📌 *Référence :* ${s.reference}`);
+  if (s.siteName) L.push(`🏢 *Chantier :* ${s.siteName}`);
+  L.push(`📝 *Objet :* ${s.title}`);
+  if (s.needBy) L.push(`🗓️ *Besoin pour le :* ${new Date(s.needBy).toLocaleDateString('fr-FR')}`);
+  L.push('');
+  L.push('*Articles :*');
+  s.items.forEach((i) => L.push(`• ${i.label} — ${i.quantity} ${i.unit}`));
+  if (s.note?.trim()) { L.push(''); L.push(`*Note :* ${s.note.trim()}`); }
+  L.push(SEP);
+  L.push('_Émis via Belel GMAO_');
+  return L.join('\n');
+}
+
+export function shareSupplyToWhatsApp(s: SupplyShare): void {
+  window.open(`https://wa.me/?text=${encodeURIComponent(buildSupplyMessage(s))}`, '_blank', 'noopener,noreferrer');
+}

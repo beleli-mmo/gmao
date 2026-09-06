@@ -35,7 +35,7 @@ supplyRouter.get('/', async (req, res, next) => {
       orderBy: { createdAt: 'desc' },
       take: 200,
       select: {
-        id: true, reference: true, status: true, title: true, createdAt: true,
+        id: true, reference: true, status: true, title: true, createdAt: true, reviewNote: true,
         purchaseOrderRef: true, needBy: true, validatedAt: true, receivedAt: true, controlledAt: true,
         site: { select: { code: true, name: true } },
         requester: { select: { fullName: true } },
