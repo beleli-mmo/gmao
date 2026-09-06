@@ -3,6 +3,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../prisma';
 import { requireAuth, requireRole } from '../auth/auth.middleware';
+import { planKpis, toHistoryRow, interventionHistoryInclude } from '../lib/intervention-kpis';
 
 export const usersRouter = Router();
 usersRouter.use(requireAuth);
@@ -22,6 +23,21 @@ usersRouter.get('/', async (req, res, next) => {
       orderBy: [{ active: 'desc' }, { fullName: 'asc' }],
     });
     res.json({ data });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** GET /api/users/:id — fiche agent + historique de ses interventions + efficacité. */
+usersRouter.get('/:id', requireRole('PARK_MANAGER', 'ADMIN'), async (req, res, next) => {
+  try {
+    const u = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: { ...publicUser, interventions: interventionHistoryInclude },
+    });
+    if (!u) return res.status(404).json({ error: 'introuvable' });
+    const { interventions, ...rest } = u;
+    res.json({ ...rest, kpis: planKpis(interventions), history: interventions.map(toHistoryRow) });
   } catch (e) {
     next(e);
   }

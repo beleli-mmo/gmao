@@ -148,6 +148,7 @@ export const endpoints = {
 
   usersList: (role?: string) => api.get<{ data: UserRow[] }>(`/api/users${role ? `?role=${role}` : ''}`),
   usersAll: () => api.get<{ data: UserRow[] }>('/api/users?all=true'),
+  user: (id: string) => api.get<UserDetail>(`/api/users/${id}`),
   createUser: (body: unknown) => api.post<UserRow>('/api/users', body),
   updateUser: (id: string, body: unknown) => api.patch<UserRow>(`/api/users/${id}`, body),
 
@@ -201,6 +202,10 @@ export interface ProviderInterventionRow {
   onTime: boolean | null; delayDays: number | null;
 }
 export interface ProviderDetail extends Provider {
+  kpis: PlanKpis;
+  history: ProviderInterventionRow[];
+}
+export interface UserDetail extends UserRow {
   kpis: PlanKpis;
   history: ProviderInterventionRow[];
 }

@@ -2,29 +2,10 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../prisma';
 import { requireAuth, requireRole } from '../auth/auth.middleware';
+import { planKpis, toHistoryRow, interventionHistoryInclude } from '../lib/intervention-kpis';
 
 export const providersRouter = Router();
 providersRouter.use(requireAuth);
-
-const DAY = 86_400_000;
-
-/** KPI de respect du planning à partir d'une liste d'interventions. */
-function planKpis(ivs: { scheduledFor: Date | null; expectedDeliveryAt: Date | null; endedAt: Date | null; laborHours: number | null }[]) {
-  const done = ivs.filter((i) => i.endedAt);
-  const withTarget = done.filter((i) => i.expectedDeliveryAt);
-  const onTime = withTarget.filter((i) => i.endedAt! <= i.expectedDeliveryAt!);
-  const delaysDays = withTarget.map((i) => Math.max(0, (i.endedAt!.getTime() - i.expectedDeliveryAt!.getTime()) / DAY));
-  return {
-    total: ivs.length,
-    done: done.length,
-    open: ivs.length - done.length,
-    withTarget: withTarget.length,
-    onTime: onTime.length,
-    planRespectPct: withTarget.length ? Math.round((onTime.length / withTarget.length) * 1000) / 10 : null,
-    avgDelayDays: delaysDays.length ? Math.round((delaysDays.reduce((s, d) => s + d, 0) / delaysDays.length) * 10) / 10 : null,
-    totalHours: done.reduce((s, i) => s + (i.laborHours ?? 0), 0),
-  };
-}
 
 /** GET /api/providers[?all=1] — liste des prestataires (externes). */
 providersRouter.get('/', async (req, res, next) => {
@@ -56,50 +37,12 @@ providersRouter.get('/:id', async (req, res, next) => {
       where: { id: req.params.id },
       include: {
         _count: { select: { externalInvoices: true } },
-        interventions: {
-          orderBy: [{ scheduledFor: 'desc' }],
-          include: {
-            ticket: {
-              select: {
-                id: true, reference: true, title: true, status: true, urgency: true,
-                site: { select: { name: true } },
-                equipment: { select: { name: true } },
-              },
-            },
-          },
-        },
+        interventions: interventionHistoryInclude,
       },
     });
     if (!p) return res.status(404).json({ error: 'introuvable' });
-
-    const history = p.interventions.map((iv) => {
-      const late = iv.endedAt && iv.expectedDeliveryAt ? iv.endedAt > iv.expectedDeliveryAt : null;
-      const delayDays = iv.endedAt && iv.expectedDeliveryAt
-        ? Math.round(((iv.endedAt.getTime() - iv.expectedDeliveryAt.getTime()) / DAY) * 10) / 10
-        : null;
-      return {
-        id: iv.id,
-        ticketId: iv.ticket?.id ?? iv.ticketId,
-        reference: iv.ticket?.reference ?? null,
-        title: iv.ticket?.title ?? null,
-        ticketStatus: iv.ticket?.status ?? null,
-        urgency: iv.ticket?.urgency ?? null,
-        siteName: iv.ticket?.site?.name ?? null,
-        assetName: iv.ticket?.equipment?.name ?? null,
-        scheduledFor: iv.scheduledFor,
-        expectedDeliveryAt: iv.expectedDeliveryAt,
-        startedAt: iv.startedAt,
-        endedAt: iv.endedAt,
-        laborHours: iv.laborHours,
-        travelKm: iv.travelKm,
-        report: iv.report,
-        onTime: late === null ? null : !late,
-        delayDays,
-      };
-    });
-
     const { interventions, ...rest } = p;
-    res.json({ ...rest, kpis: planKpis(interventions), history });
+    res.json({ ...rest, kpis: planKpis(interventions), history: interventions.map(toHistoryRow) });
   } catch (e) {
     next(e);
   }

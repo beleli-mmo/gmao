@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { endpoints, type UserRow } from '@/lib/api';
@@ -91,7 +92,7 @@ export default function EquipePage() {
               const self = u.id === me?.id;
               return (
                 <tr key={u.id} style={{ opacity: u.active === false ? 0.5 : 1 }}>
-                  <td>{u.fullName}{self && <span className="muted"> (vous)</span>}</td>
+                  <td><Link href={`/equipe/${u.id}`}>{u.fullName}</Link>{self && <span className="muted"> (vous)</span>}</td>
                   <td className="muted">{u.email}</td>
                   <td className="muted">{u.phone || '—'}</td>
                   <td>
