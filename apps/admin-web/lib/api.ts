@@ -180,6 +180,13 @@ export const endpoints = {
   report: (period: 'week' | 'month', date: string, siteId?: string) =>
     api.get<ReportData>(`/api/reports?period=${period}&date=${date}${siteId ? `&siteId=${siteId}` : ''}`),
 
+  supplyList: (qs = '') => api.get<{ data: SupplyRow[] }>(`/api/supply${qs}`),
+  supply: (id: string) => api.get<SupplyDetail>(`/api/supply/${id}`),
+  createSupply: (body: unknown) => api.post<SupplyDetail>('/api/supply', body),
+  updateSupply: (id: string, body: unknown) => api.patch<SupplyDetail>(`/api/supply/${id}`, body),
+  reviewSupply: (id: string, body: unknown) => api.post<SupplyDetail>(`/api/supply/${id}/review`, body),
+  receiveSupply: (id: string) => api.post<SupplyDetail>(`/api/supply/${id}/receive`, {}),
+
   providersList: (qs = '') => api.get<{ data: Provider[] }>(`/api/providers${qs}`),
   provider: (id: string) => api.get<ProviderDetail>(`/api/providers/${id}`),
   createProvider: (body: unknown) => api.post<Provider>('/api/providers', body),
@@ -211,6 +218,32 @@ export interface ProviderDetail extends Provider {
 export interface UserDetail extends UserRow {
   kpis: PlanKpis;
   history: ProviderInterventionRow[];
+}
+
+export type SupplyStatus = 'DEMANDEE' | 'A_MODIFIER' | 'VALIDEE' | 'RECUE' | 'CLOTUREE' | 'ANNULEE';
+export interface SupplyRow {
+  id: string; reference: string; status: SupplyStatus; title: string; createdAt: string;
+  purchaseOrderRef: string | null; needBy: string | null;
+  site: { code: string; name: string }; requester: { fullName: string };
+  _count: { items: number; attachments: number };
+}
+export interface SupplyItem { id: string; label: string; quantity: number; unit: string; note: string | null }
+export interface SupplyEvent { id: string; type: string; toStatus: SupplyStatus; note: string | null; createdAt: string; actor: { fullName: string } | null }
+export interface SupplyAttachment { id: string; mimeType: string; url: string | null }
+export interface SupplyDetail {
+  id: string; reference: string; status: SupplyStatus; title: string; note: string | null;
+  needBy: string | null; reviewNote: string | null; controlNote: string | null;
+  purchaseOrderRef: string | null; purchaseOrderAt: string | null;
+  validatedAt: string | null; receivedAt: string | null; controlledAt: string | null;
+  createdAt: string;
+  site: { id: string; code: string; name: string };
+  requester: { id: string; fullName: string };
+  validatedBy: { fullName: string } | null;
+  receivedBy: { fullName: string } | null;
+  controlledBy: { fullName: string } | null;
+  items: SupplyItem[];
+  events: SupplyEvent[];
+  attachments: SupplyAttachment[];
 }
 
 export interface Tally { key: string; count: number; color?: string; respected?: number; pct?: number }

@@ -13,7 +13,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const s = currentSession();
-    if (!s || (s.role !== 'PARK_MANAGER' && s.role !== 'ADMIN')) {
+    const allowed = ['PARK_MANAGER', 'ADMIN', 'FIELD_MANAGER', 'CONTROLEUR'];
+    if (!s || !allowed.includes(s.role)) {
       router.replace('/login');
     } else {
       setReady(true);

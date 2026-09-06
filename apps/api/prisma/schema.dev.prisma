@@ -48,6 +48,11 @@ model User {
   ticketEvents     TicketEvent[]
   signatures       TicketSignature[]
   meterReadings    MeterReading[]
+  supplyRequested  SupplyRequest[]  @relation("supplyRequester")
+  supplyValidated  SupplyRequest[]  @relation("supplyValidator")
+  supplyReceived   SupplyRequest[]  @relation("supplyReceiver")
+  supplyControlled SupplyRequest[]  @relation("supplyController")
+  supplyEvents     SupplyEvent[]    @relation("supplyEventActor")
 
   @@index([role])
 }
@@ -66,6 +71,7 @@ model Site {
   assignments EquipmentAssignment[]
   tickets     Ticket[]
   costLines   CostLine[]
+  supplyRequests SupplyRequest[]
 
   @@index([active])
 }
@@ -431,4 +437,77 @@ model SyncLog {
   @@unique([couchId, couchRev])
   @@index([clientId])
   @@index([status])
+}
+
+
+model SupplyRequest {
+  id               String   @id @default(uuid())
+  reference        String   @unique
+  status           String   @default("DEMANDEE")
+  siteId           String
+  requesterId      String
+  title            String
+  note             String?
+  needBy           DateTime?
+  reviewNote       String?
+  validatedById    String?
+  validatedAt      DateTime?
+  purchaseOrderRef String?  @unique
+  purchaseOrderAt  DateTime?
+  receivedById     String?
+  receivedAt       DateTime?
+  controlledById   String?
+  controlledAt     DateTime?
+  controlNote      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  site         Site  @relation(fields: [siteId], references: [id])
+  requester    User  @relation("supplyRequester", fields: [requesterId], references: [id])
+  validatedBy  User? @relation("supplyValidator", fields: [validatedById], references: [id])
+  receivedBy   User? @relation("supplyReceiver", fields: [receivedById], references: [id])
+  controlledBy User? @relation("supplyController", fields: [controlledById], references: [id])
+  items        SupplyItem[]
+  attachments  SupplyAttachment[]
+  events       SupplyEvent[]
+
+  @@index([status])
+  @@index([siteId])
+  @@index([requesterId])
+}
+
+model SupplyItem {
+  id        String  @id @default(uuid())
+  requestId String
+  label     String
+  quantity  Float   @default(1)
+  unit      String  @default("U")
+  note      String?
+  request SupplyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  @@index([requestId])
+}
+
+model SupplyAttachment {
+  id         String   @id @default(uuid())
+  requestId  String
+  storageKey String
+  mimeType   String
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
+  request SupplyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  @@index([requestId])
+}
+
+model SupplyEvent {
+  id         String   @id @default(uuid())
+  requestId  String
+  type       String
+  fromStatus String?
+  toStatus   String
+  actorId    String?
+  note       String?
+  createdAt  DateTime @default(now())
+  request SupplyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actor   User? @relation("supplyEventActor", fields: [actorId], references: [id])
+  @@index([requestId])
 }

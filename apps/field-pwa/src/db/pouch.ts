@@ -11,10 +11,11 @@ export const localTickets = new PouchDB('gmao_tickets');
 
 const API = (import.meta.env.VITE_API_URL as string)?.replace(/\/$/, '') || '';
 
-let session: { username: string; token: string } | null = null;
-export function setSession(s: { username: string; token: string } | null) {
+let session: { username: string; token: string; role?: string } | null = null;
+export function setSession(s: { username: string; token: string; role?: string } | null) {
   session = s;
 }
+export const sessionRole = () => session?.role ?? null;
 export const isOnline = () => navigator.onLine;
 function auth(): HeadersInit {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.token ?? ''}` };
@@ -166,5 +167,71 @@ export async function fetchTicketPhotos(reference: string): Promise<File[]> {
     });
   } catch {
     return [];
+  }
+}
+
+// ── approvisionnement ──────────────────────────────────────────────
+export interface SupplyRow {
+  id: string;
+  reference: string;
+  status: 'DEMANDEE' | 'A_MODIFIER' | 'VALIDEE' | 'RECUE' | 'CLOTUREE' | 'ANNULEE';
+  title: string;
+  createdAt: string;
+  purchaseOrderRef: string | null;
+  site?: { name: string };
+  requester?: { fullName: string };
+  _count?: { items: number };
+}
+export interface SupplyDetail extends SupplyRow {
+  note: string | null;
+  needBy: string | null;
+  items: { id: string; label: string; quantity: number; unit: string }[];
+  events: { id: string; toStatus: string; note: string | null; createdAt: string; actor: { fullName: string } | null }[];
+}
+
+export async function listSupply(): Promise<SupplyRow[]> {
+  if (!navigator.onLine || !session) return [];
+  try {
+    const r = await fetch(`${API}/api/supply`, { headers: auth() });
+    if (r.status === 401) { authExpired(); return []; }
+    if (!r.ok) return [];
+    return (await r.json()).data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getSupply(id: string): Promise<SupplyDetail | null> {
+  if (!navigator.onLine || !session) return null;
+  try {
+    const r = await fetch(`${API}/api/supply/${id}`, { headers: auth() });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Contrôle terrain : 1 à 3 photos (base64) + note → clôture la demande. */
+export async function submitSupplyControl(
+  id: string,
+  payload: { note?: string; photos: { mimeType: string; dataBase64: string }[] },
+): Promise<{ ok: boolean; error?: string }> {
+  if (!navigator.onLine) return { ok: false, error: 'Pas de connexion Internet' };
+  try {
+    const r = await fetch(`${API}/api/supply/${id}/control`, {
+      method: 'POST',
+      headers: auth(),
+      body: JSON.stringify(payload),
+    });
+    if (r.status === 401) { authExpired(); return { ok: false, error: 'Session expirée — reconnectez-vous' }; }
+    if (r.status === 403) return { ok: false, error: "Votre compte n'a pas le droit de contrôler." };
+    if (!r.ok) {
+      const b = await r.json().catch(() => null);
+      return { ok: false, error: b?.message ?? `Le serveur a refusé (${r.status})` };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Échec réseau — réessayez' };
   }
 }

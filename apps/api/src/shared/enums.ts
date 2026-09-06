@@ -50,5 +50,6 @@ export const Role = {
   MECHANIC: 'MECHANIC',
   ADMIN: 'ADMIN',
   DIRECTION: 'DIRECTION',
+  CONTROLEUR: 'CONTROLEUR',
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];

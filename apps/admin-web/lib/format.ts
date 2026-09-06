@@ -48,8 +48,9 @@ export const ROLE_LABEL: Record<string, string> = {
   MECHANIC: 'Technicien',
   ADMIN: 'Administrateur',
   DIRECTION: 'Direction (PDG) — consultation',
+  CONTROLEUR: 'Contrôleur terrain (appro.)',
 };
-export const ROLES = ['FIELD_MANAGER', 'PARK_MANAGER', 'MECHANIC', 'ADMIN', 'DIRECTION'] as const;
+export const ROLES = ['FIELD_MANAGER', 'PARK_MANAGER', 'MECHANIC', 'ADMIN', 'DIRECTION', 'CONTROLEUR'] as const;
 
 export const EQUIPMENT_STATUS_LABEL: Record<EquipmentStatus, string> = {
   EN_SERVICE: 'En service',
@@ -78,4 +79,16 @@ export const COST_KIND_COLOR: Record<CostKind, string> = {
   PIECE: '#E69F00',
   FACTURE_EXTERNE: '#009E73',
   DEPLACEMENT: '#CC79A7',
+};
+
+export const SUPPLY_STATUS_LABEL: Record<string, string> = {
+  DEMANDEE: 'Demandée',
+  A_MODIFIER: 'Modification demandée',
+  VALIDEE: 'Validée — BC généré',
+  RECUE: 'Réception confirmée',
+  CLOTUREE: 'Contrôlée & clôturée',
+  ANNULEE: 'Annulée',
+};
+export const SUPPLY_STATUS_TONE: Record<string, string> = {
+  DEMANDEE: 'info', A_MODIFIER: 'warning', VALIDEE: 'good', RECUE: 'good', CLOTUREE: 'good', ANNULEE: 'critical',
 };

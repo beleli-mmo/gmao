@@ -7,6 +7,7 @@ import { currentSession, logout } from '@/lib/auth';
 const NAV = [
   { href: '/dashboard', label: 'Tableau de bord', icon: '▦' },
   { href: '/tickets', label: 'DI / OS', icon: '🎫' },
+  { href: '/approvisionnement', label: 'Approvisionnement', icon: '🧾' },
   { href: '/chantiers', label: 'Projets & sites', icon: '🏢' },
   { href: '/lots', label: 'Lots techniques', icon: '🧩' },
   { href: '/parc', label: 'Actifs techniques', icon: '⚙️' },
@@ -18,16 +19,21 @@ const NAV = [
   { href: '/rapports', label: 'Rapports', icon: '📄' },
   { href: '/equipe', label: 'Équipe & accès', icon: '👤' },
 ];
+// Le chef de chantier et le contrôleur n'accèdent qu'à l'approvisionnement.
+const RESTRICTED = ['FIELD_MANAGER', 'CONTROLEUR'];
 
 export function Sidebar() {
   const pathname = usePathname();
   const session = currentSession();
+  const nav = session && RESTRICTED.includes(session.role)
+    ? NAV.filter((n) => n.href === '/approvisionnement')
+    : NAV;
 
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">Belel <span>GMAO</span></div>
       <nav className="sidebar-nav">
-        {NAV.map((n) => (
+        {nav.map((n) => (
           <Link
             key={n.href}
             href={n.href}

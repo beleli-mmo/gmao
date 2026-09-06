@@ -4,6 +4,7 @@ import { TicketCreateForm } from './components/TicketCreateForm';
 import { QrScanner } from './components/QrScanner';
 import { MyTicketsList } from './components/MyTicketsList';
 import { setSession as setSyncSession, pullReference, onAuthExpiredCallback } from './db/pouch';
+import { SupplyScreen } from './components/SupplyScreen';
 import type { ResolvedEquipment } from './lib/qr';
 import { resetApp } from './lib/reset';
 import './app.css';
@@ -27,8 +28,8 @@ function ResetLink() {
 }
 
 const API = (import.meta.env.VITE_API_URL as string)?.replace(/\/$/, '') || '';
-type Session = { username: string; token: string; fullName: string };
-type Screen = { name: 'home' } | { name: 'scan' } | { name: 'ticket'; qrPayload?: string; equipmentId?: string } | { name: 'history' };
+type Session = { username: string; token: string; fullName: string; role: string };
+type Screen = { name: 'home' } | { name: 'scan' } | { name: 'ticket'; qrPayload?: string; equipmentId?: string } | { name: 'history' } | { name: 'supply' };
 
 function Login({ onDone }: { onDone: (s: Session) => void }) {
   const [email, setEmail] = useState('');
@@ -48,7 +49,7 @@ function Login({ onDone }: { onDone: (s: Session) => void }) {
       });
       if (!r.ok) throw new Error('Identifiants invalides');
       const d = await r.json();
-      const s: Session = { username: d.user.id, token: d.accessToken, fullName: d.user.fullName };
+      const s: Session = { username: d.user.id, token: d.accessToken, fullName: d.user.fullName, role: d.user.role };
       localStorage.setItem('gmao.session', JSON.stringify(s));
       onDone(s);
     } catch (e) {
@@ -79,7 +80,7 @@ function App() {
 
   const activate = useCallback((s: Session) => {
     setSession(s);
-    setSyncSession({ username: s.username, token: s.token });
+    setSyncSession({ username: s.username, token: s.token, role: s.role });
     pullReference().catch(() => {});
   }, []);
 
@@ -128,6 +129,16 @@ function App() {
     );
   }
 
+  if (screen.name === 'supply') {
+    return (
+      <main>
+        <button className="app-back" onClick={() => setScreen({ name: 'home' })}>← Retour</button>
+        <h1 style={{ padding: '8px 16px 0', fontSize: 20 }}>Approvisionnements</h1>
+        <SupplyScreen role={session.role} />
+      </main>
+    );
+  }
+
   if (screen.name === 'ticket') {
     return (
       <main>
@@ -151,6 +162,7 @@ function App() {
       <button className="app-cta app-cta--primary" onClick={() => setScreen({ name: 'scan' })}>📷 Scanner un actif</button>
       <button className="app-cta" onClick={() => setScreen({ name: 'ticket' })}>✏️ Créer une demande</button>
       <button className="app-cta" onClick={() => setScreen({ name: 'history' })}>📋 Mes demandes</button>
+      <button className="app-cta" onClick={() => setScreen({ name: 'supply' })}>📦 Approvisionnements</button>
       <button className="app-cta" style={{ borderColor: 'transparent', color: '#1769ff' }} onClick={logout}>Se déconnecter</button>
       <p className="muted" style={{ fontSize: 11, textAlign: 'center', marginTop: 4 }}>version {__BUILD__}</p>
       <ResetLink />

@@ -8,7 +8,7 @@ import { planKpis, toHistoryRow, interventionHistoryInclude } from '../lib/inter
 export const usersRouter = Router();
 usersRouter.use(requireAuth);
 
-const ROLES = ['FIELD_MANAGER', 'PARK_MANAGER', 'MECHANIC', 'ADMIN', 'DIRECTION'] as const;
+const ROLES = ['FIELD_MANAGER', 'PARK_MANAGER', 'MECHANIC', 'ADMIN', 'DIRECTION', 'CONTROLEUR'] as const;
 const publicUser = { id: true, fullName: true, email: true, phone: true, role: true, active: true, createdAt: true } as const;
 
 /** Annuaire — alimente les listes déroulantes ET la page « Équipe & accès ». */

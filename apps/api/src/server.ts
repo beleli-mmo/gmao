@@ -12,6 +12,7 @@ import { sitesRouter } from './modules/sites.routes';
 import { usersRouter } from './modules/users.routes';
 import { providersRouter } from './modules/providers.routes';
 import { reportsRouter } from './modules/reports.routes';
+import { supplyRouter } from './modules/supply.routes';
 import { lotsRouter } from './modules/lots.routes';
 import { syncRouter } from './modules/sync.routes';
 import { setBroadcaster } from './realtime';
@@ -35,6 +36,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/providers', providersRouter);
 app.use('/api/lots', lotsRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/supply', supplyRouter);
 
 // gestion d'erreurs centralisée
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
