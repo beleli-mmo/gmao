@@ -90,7 +90,7 @@ export interface Equipment {
 
 export interface LotRow {
   id: string; code: string; name: string; defaultFrequency?: string | null;
-  isRegulatory: boolean; color: string;
+  isRegulatory: boolean; color: string; active: boolean;
   _count: { equipment: number; tickets: number };
 }
 
@@ -136,8 +136,10 @@ export const endpoints = {
   deleteEquipment: (id: string) => api.del(`/api/equipment/${id}`),
   equipmentStatus: (id: string, status: EquipmentStatus) => api.patch(`/api/equipment/${id}/status`, { status }),
 
-  lotsList: () => api.get<{ data: LotRow[] }>('/api/lots'),
+  lotsList: (qs = '') => api.get<{ data: LotRow[] }>(`/api/lots${qs}`),
   createLot: (body: unknown) => api.post('/api/lots', body),
+  updateLot: (id: string, body: unknown) => api.patch(`/api/lots/${id}`, body),
+  deleteLot: (id: string) => api.del(`/api/lots/${id}`),
 
   sitesList: (qs = '') => api.get<{ data: SiteRow[] }>(`/api/sites${qs}`),
   createSite: (body: unknown) => api.post('/api/sites', body),
